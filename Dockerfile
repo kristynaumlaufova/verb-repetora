@@ -12,7 +12,7 @@ RUN dotnet publish BE.csproj -c Release -o /app
 # Frontend
 FROM node:16 AS frontend
 WORKDIR /frontend
-COPY fe/ .
+COPY FE/ .
 RUN npm install
 RUN npm run build
 

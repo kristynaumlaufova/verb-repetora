@@ -25,4 +25,4 @@ docker-compose.override.yml
 .DS_Store
 
 # React build artifacts
-fe/build/
+FE/build/
