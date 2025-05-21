@@ -1,0 +1,15 @@
+.logo {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  gap: 0.5rem;
+}
+
+.star {
+  font-size: 1.5rem;
+}
+
+.text {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
