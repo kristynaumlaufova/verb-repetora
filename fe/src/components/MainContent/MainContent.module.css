@@ -1,7 +1,7 @@
 .mainContent {
   flex: 1;
   padding: 2rem;
-  background-color: #f9fafb;
+  background-color: white;
   height: calc(100vh - 60px); /* Subtract TopBar height */
   overflow-y: auto;
 }

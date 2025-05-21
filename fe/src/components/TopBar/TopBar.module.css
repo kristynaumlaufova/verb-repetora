@@ -1,7 +1,6 @@
 .topBar {
   height: 60px;
   background-color: white;
-  border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -125,12 +124,6 @@
 
 .createNew:hover {
   color: #9C27B0;
-}
-
-.divider {
-  height: 1px;
-  background-color: #e5e7eb;
-  margin: 0.5rem 0;
 }
 
 .userInfo {
