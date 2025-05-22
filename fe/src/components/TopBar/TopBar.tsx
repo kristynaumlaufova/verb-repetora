@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./TopBar.module.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -7,6 +8,7 @@ interface TopBarProps {
   onLanguageChange: (language: string) => void;
   userName: string;
   userEmail: string;
+  onCreateNewLanguage: () => void;
 }
 
 const TopBar: React.FC<TopBarProps> = ({
@@ -14,11 +16,13 @@ const TopBar: React.FC<TopBarProps> = ({
   onLanguageChange,
   userName,
   userEmail,
+  onCreateNewLanguage,
 }) => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,13 +50,19 @@ const TopBar: React.FC<TopBarProps> = ({
     { code: "GERMAN", label: "German" },
   ];
 
+  const handleLanguageClick = () => {
+    setIsLangMenuOpen(!isLangMenuOpen);
+  };
+
+  const handleCreateNewClick = () => {
+    setIsLangMenuOpen(false);
+    navigate("/manage-languages");
+  };
+
   return (
     <div className={styles.topBar}>
       <div className={styles.languageSelector} ref={langMenuRef}>
-        <button
-          className={styles.langButton}
-          onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-        >
+        <button className={styles.langButton} onClick={handleLanguageClick}>
           {currentLanguage}
         </button>
         {isLangMenuOpen && (
@@ -75,7 +85,10 @@ const TopBar: React.FC<TopBarProps> = ({
               </button>
             ))}
             <div className={styles.divider}></div>
-            <button className={`${styles.dropdownItem} ${styles.createNew}`}>
+            <button
+              className={`${styles.dropdownItem} ${styles.createNew}`}
+              onClick={handleCreateNewClick}
+            >
               <span className={styles.createNewContent}>
                 <i className="bi bi-plus-lg"></i>
                 <span>Create new</span>

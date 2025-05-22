@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import NavigationMenuItem from "../NavigationMenuItem/NavigationMenuItem";
 import styles from "./NavigationMenuItems.module.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -7,26 +8,35 @@ export type MenuItem = {
   id: string;
   icon: string;
   label: string;
+  path: string;
 };
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", icon: "bi bi-house-door", label: "Dashboard" },
-  { id: "lessons", icon: "bi bi-book", label: "Lessons" },
-  { id: "vocabulary", icon: "bi bi-journal-text", label: "Vocabulary" },
+  { id: "dashboard", icon: "bi bi-house-door", label: "Dashboard", path: "/" },
+  { id: "lessons", icon: "bi bi-book", label: "Lessons", path: "/lessons" },
+  {
+    id: "vocabulary",
+    icon: "bi bi-journal-text",
+    label: "Vocabulary",
+    path: "/vocabulary",
+  },
 ];
 
 interface NavigationMenuItemsProps {
-  onMenuItemClick: (menuId: string) => void;
+  onMobileMenuClose?: () => void;
 }
 
 const NavigationMenuItems: React.FC<NavigationMenuItemsProps> = ({
-  onMenuItemClick,
+  onMobileMenuClose,
 }) => {
-  const [activeItem, setActiveItem] = useState("dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleMenuItemClick = (menuId: string) => {
-    setActiveItem(menuId);
-    onMenuItemClick(menuId);
+  const handleMenuItemClick = (path: string) => {
+    navigate(path);
+    if (onMobileMenuClose) {
+      onMobileMenuClose();
+    }
   };
 
   return (
@@ -36,8 +46,8 @@ const NavigationMenuItems: React.FC<NavigationMenuItemsProps> = ({
           key={item.id}
           icon={item.icon}
           label={item.label}
-          isActive={activeItem === item.id}
-          onClick={() => handleMenuItemClick(item.id)}
+          isActive={location.pathname === (item.path === "/" ? "/" : item.path)}
+          onClick={() => handleMenuItemClick(item.path)}
         />
       ))}
     </nav>

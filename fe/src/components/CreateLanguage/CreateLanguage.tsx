@@ -1,0 +1,95 @@
+import React, { useState, useRef, useEffect } from "react";
+import styles from "./CreateLanguage.module.css";
+
+interface CreateLanguageProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateLanguage: (name: string) => void;
+}
+
+const CreateLanguage: React.FC<CreateLanguageProps> = ({
+  isOpen,
+  onClose,
+  onCreateLanguage,
+}) => {
+  const [languageName, setLanguageName] = useState("");
+  const modalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLanguageName("");
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (languageName.trim()) {
+      onCreateLanguage(languageName.trim());
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal} ref={modalRef}>
+        <h2 className={styles.title}>Create new language</h2>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="languageName">Name</label>
+            <input
+              ref={inputRef}
+              type="text"
+              id="languageName"
+              value={languageName}
+              onChange={(e) => setLanguageName(e.target.value)}
+              placeholder="Spanish"
+              maxLength={20}
+              required
+            />
+          </div>
+          <div className={styles.buttonGroup}>
+            <button
+              type="button"
+              onClick={onClose}
+              className={styles.closeButton}
+            >
+              CLOSE
+            </button>
+            <button
+              type="submit"
+              className={styles.createButton}
+              disabled={!languageName.trim()}
+            >
+              CREATE
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateLanguage;

@@ -4,11 +4,7 @@ import NavigationMenuItems from "./NavigationMenuItems/NavigationMenuItems";
 import styles from "./LeftSideBar.module.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-interface LeftSideBarProps {
-  onNavigate: (menuId: string) => void;
-}
-
-const LeftSideBar: React.FC<LeftSideBarProps> = ({ onNavigate }) => {
+const LeftSideBar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -24,6 +20,10 @@ const LeftSideBar: React.FC<LeftSideBarProps> = ({ onNavigate }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const handleMobileMenuClose = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <>
       {isMobile && !isMobileMenuOpen && (
@@ -37,24 +37,14 @@ const LeftSideBar: React.FC<LeftSideBarProps> = ({ onNavigate }) => {
       )}
 
       {isMobileMenuOpen && (
-        <div
-          className={styles.overlay}
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
+        <div className={styles.overlay} onClick={handleMobileMenuClose} />
       )}
 
       <div
         className={`${styles.sidebar} ${isMobileMenuOpen ? styles.open : ""}`}
       >
         <Logo />
-        <NavigationMenuItems
-          onMenuItemClick={(menuId) => {
-            onNavigate(menuId);
-            if (isMobile) {
-              setIsMobileMenuOpen(false);
-            }
-          }}
-        />
+        <NavigationMenuItems onMobileMenuClose={handleMobileMenuClose} />
       </div>
     </>
   );

@@ -7,14 +7,22 @@
   transition: all 0.2s ease;
   border-radius: 4px;
   margin: 0 0.5rem;
+  color: #374151;
 }
 
 .menuItem:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  color: #9C27B0;
+  background-color: rgba(156, 39, 176, 0.05);
 }
 
 .active {
-  background-color: #f0f0f0;
+  background-color: rgba(46, 150, 255, 0.05);
+  color: #2E96FF;
+}
+
+.active:hover {
+  color: #9C27B0;
+  background-color: rgba(156, 39, 176, 0.05);
 }
 
 .icon {
