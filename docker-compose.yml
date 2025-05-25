@@ -1,20 +1,23 @@
 # Removed the 'version' attribute as it is obsolete.
-services:
-  backend:
+services:  
+  backend:    
     build:
-      context: .
-      dockerfile: Dockerfile
+        context: .
+        dockerfile: Dockerfile
+        args:
+          BUILDKIT_INLINE_CACHE: 1
+        cache_from:
+          - backend:latest
     ports:
-      - "5000:8080"  # Map container port 8080 to host port 5000
+        - "5000:8080"
     depends_on:
-      - db
-
+        - db
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: mydatabase
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:

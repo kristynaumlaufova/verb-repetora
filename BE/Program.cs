@@ -15,14 +15,8 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Language Learning API",
+        Title = "VerbRepetora API",
         Version = "v1",
-        Description = "API for managing language learning resources",
-        Contact = new OpenApiContact
-        {
-            Name = "API Support",
-            Email = "support@example.com"
-        }
     });
 });
 
@@ -50,10 +44,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Language Learning API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "VerbRepetora API V1");
         c.RoutePrefix = "swagger";
     });
 }
+
+// Configure static files
+var staticFileOptions = new StaticFileOptions
+{
+    ServeUnknownFileTypes = true
+};
+
+// Configure default files
+var defaultFilesOptions = new DefaultFilesOptions();
+defaultFilesOptions.DefaultFileNames.Clear();
+defaultFilesOptions.DefaultFileNames.Add("index.html");
+
+app.UseDefaultFiles(defaultFilesOptions);
+app.UseStaticFiles(staticFileOptions);
 
 app.UseHttpsRedirection();
 
@@ -65,10 +73,10 @@ app.UseCors(builder => builder
 
 app.UseAuthorization();
 
+// Map API controllers
 app.MapControllers();
 
-// Serve static files from wwwroot
-app.UseDefaultFiles();
-app.UseStaticFiles();
+// This needs to be last - handle all non-API routes
+app.MapFallbackToFile("/index.html");
 
 app.Run();
