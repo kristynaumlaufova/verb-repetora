@@ -5,29 +5,38 @@ using BE.Models;
 
 namespace BE.Controllers;
 
+/// <summary>
+/// Controller for user related operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class AppUserController : ControllerBase
+public class AppUserController(ApplicationDbContext context) : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-
-    public AppUserController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/AppUser
+    /// <summary>
+    /// Retrieves all users from the database.
+    /// </summary>
+    /// <returns>A list of all users.</returns>
+    /// <example>
+    /// GET /api/AppUser
+    /// </example>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
     {
-        return await _context.Users.ToListAsync();
+        return await context.Users.ToListAsync();
     }
 
-    // GET: api/AppUser/5
+    /// <summary>
+    /// Retrieves a user by their ID.
+    /// </summary>
+    /// <param name="id">The ID of the user to retrieve.</param>
+    /// <returns>The requested user.</returns>
+    /// <example>
+    /// GET /api/AppUser/5
+    /// </example>
     [HttpGet("{id}")]
     public async Task<ActionResult<AppUser>> GetUser(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await context.Users.FindAsync(id);
 
         if (user == null)
         {
@@ -37,17 +46,40 @@ public class AppUserController : ControllerBase
         return user;
     }
 
-    // POST: api/AppUser
+    /// <summary>
+    /// Creates a new user.
+    /// </summary>
+    /// <param name="user">The user object to create.</param>
+    /// <returns>The created user.</returns>
+    /// <example>
+    /// POST /api/AppUser
+    /// {
+    ///     "email": "john.doe@example.com",
+    ///     "name": "John Doe"
+    /// }
+    /// </example>
     [HttpPost]
     public async Task<ActionResult<AppUser>> CreateUser(AppUser user)
     {
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
     }
 
-    // PUT: api/AppUser/5
+    /// <summary>
+    /// Updates a specific user.
+    /// </summary>
+    /// <param name="id">The ID of the user to update.</param>
+    /// <param name="user">The updated user object.</param>
+    /// <example>
+    /// PUT /api/AppUser/5
+    /// {
+    ///     "id": 5,
+    ///     "email": "john.doe.updated@example.com",
+    ///     "name": "John Doe"
+    /// }
+    /// </example>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, AppUser user)
     {
@@ -56,11 +88,11 @@ public class AppUserController : ControllerBase
             return BadRequest();
         }
 
-        _context.Entry(user).State = EntityState.Modified;
+        context.Entry(user).State = EntityState.Modified;
 
         try
         {
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -77,24 +109,30 @@ public class AppUserController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/AppUser/5
+    /// <summary>
+    /// Deletes a specific user.
+    /// </summary>
+    /// <param name="id">The ID of the user to delete.</param>
+    /// <example>
+    /// DELETE /api/AppUser/5
+    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await context.Users.FindAsync(id);
         if (user == null)
         {
             return NotFound();
         }
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
+        context.Users.Remove(user);
+        await context.SaveChangesAsync();
 
         return NoContent();
     }
 
     private bool UserExists(int id)
     {
-        return _context.Users.Any(e => e.Id == id);
+        return context.Users.Any(e => e.Id == id);
     }
 }

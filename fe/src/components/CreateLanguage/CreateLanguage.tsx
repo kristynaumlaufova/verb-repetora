@@ -5,12 +5,14 @@ interface CreateLanguageProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateLanguage: (name: string) => void;
+  initialValue?: string;
 }
 
 const CreateLanguage: React.FC<CreateLanguageProps> = ({
   isOpen,
   onClose,
   onCreateLanguage,
+  initialValue,
 }) => {
   const [languageName, setLanguageName] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
@@ -18,10 +20,10 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setLanguageName("");
+      setLanguageName(initialValue || "");
       inputRef.current?.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, initialValue]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -55,7 +57,9 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal} ref={modalRef}>
-        <h2 className={styles.title}>Create new language</h2>
+        <h2 className={styles.title}>
+          {initialValue ? "Edit language" : "Create new language"}
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label htmlFor="languageName">Name</label>
@@ -83,7 +87,7 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
               className={styles.createButton}
               disabled={!languageName.trim()}
             >
-              CREATE
+              {initialValue ? "SAVE" : "CREATE"}
             </button>
           </div>
         </form>

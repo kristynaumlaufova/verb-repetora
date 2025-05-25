@@ -5,29 +5,38 @@ using BE.Models;
 
 namespace BE.Controllers;
 
+/// <summary>
+/// Controller for managing word-lesson related operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class WordInLessonController : ControllerBase
+public class WordInLessonController(ApplicationDbContext context) : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-
-    public WordInLessonController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/WordInLesson
+    /// <summary>
+    /// Retrieves all word-lesson assignments from the database.
+    /// </summary>
+    /// <returns>A list of all word-lesson assignments.</returns>
+    /// <example>
+    /// GET /api/WordInLesson
+    /// </example>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WordInLesson>>> GetWordInLessons()
     {
-        return await _context.WordInLessons.ToListAsync();
+        return await context.WordInLessons.ToListAsync();
     }
 
-    // GET: api/WordInLesson/5
+    /// <summary>
+    /// Retrieves a specific word-lesson assignment by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the word-lesson assignment to retrieve.</param>
+    /// <returns>The requested word-lesson assignment if found.</returns>
+    /// <example>
+    /// GET /api/WordInLesson/5
+    /// </example>
     [HttpGet("{id}")]
     public async Task<ActionResult<WordInLesson>> GetWordInLesson(int id)
     {
-        var wordInLesson = await _context.WordInLessons.FindAsync(id);
+        var wordInLesson = await context.WordInLessons.FindAsync(id);
 
         if (wordInLesson == null)
         {
@@ -37,17 +46,42 @@ public class WordInLessonController : ControllerBase
         return wordInLesson;
     }
 
-    // POST: api/WordInLesson
+    /// <summary>
+    /// Creates a new word-lesson assignment.
+    /// </summary>
+    /// <param name="wordInLesson">The word-lesson assignment object to create.</param>
+    /// <returns>The created word-lesson assignment.</returns>
+    /// <example>
+    /// POST /api/WordInLesson
+    /// {
+    ///     "wordId": 1,
+    ///     "lessonId": 1,
+    ///     "order": 1
+    /// }
+    /// </example>
     [HttpPost]
     public async Task<ActionResult<WordInLesson>> CreateWordInLesson(WordInLesson wordInLesson)
     {
-        _context.WordInLessons.Add(wordInLesson);
-        await _context.SaveChangesAsync();
+        context.WordInLessons.Add(wordInLesson);
+        await context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetWordInLesson), new { id = wordInLesson.Id }, wordInLesson);
     }
 
-    // PUT: api/WordInLesson/5
+    /// <summary>
+    /// Updates a specific word-lesson assignment.
+    /// </summary>
+    /// <param name="id">The ID of the word-lesson assignment to update.</param>
+    /// <param name="wordInLesson">The updated word-lesson assignment object.</param>
+    /// <example>
+    /// PUT /api/WordInLesson/5
+    /// {
+    ///     "id": 5,
+    ///     "wordId": 1,
+    ///     "lessonId": 1,
+    ///     "order": 2
+    /// }
+    /// </example>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateWordInLesson(int id, WordInLesson wordInLesson)
     {
@@ -56,11 +90,11 @@ public class WordInLessonController : ControllerBase
             return BadRequest();
         }
 
-        _context.Entry(wordInLesson).State = EntityState.Modified;
+        context.Entry(wordInLesson).State = EntityState.Modified;
 
         try
         {
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -77,24 +111,30 @@ public class WordInLessonController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/WordInLesson/5
+    /// <summary>
+    /// Deletes a specific word-lesson assignment.
+    /// </summary>
+    /// <param name="id">The ID of the word-lesson assignment to delete.</param>
+    /// <example>
+    /// DELETE /api/WordInLesson/5
+    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWordInLesson(int id)
     {
-        var wordInLesson = await _context.WordInLessons.FindAsync(id);
+        var wordInLesson = await context.WordInLessons.FindAsync(id);
         if (wordInLesson == null)
         {
             return NotFound();
         }
 
-        _context.WordInLessons.Remove(wordInLesson);
-        await _context.SaveChangesAsync();
+        context.WordInLessons.Remove(wordInLesson);
+        await context.SaveChangesAsync();
 
         return NoContent();
     }
 
     private bool WordInLessonExists(int id)
     {
-        return _context.WordInLessons.Any(e => e.Id == id);
+        return context.WordInLessons.Any(e => e.Id == id);
     }
 }

@@ -5,29 +5,38 @@ using BE.Models;
 
 namespace BE.Controllers;
 
+/// <summary>
+/// Controller for language related operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class LanguageController : ControllerBase
+public class LanguageController(ApplicationDbContext context) : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-
-    public LanguageController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/Language
+    /// <summary>
+    /// Retrieves all languages from the database.
+    /// </summary>
+    /// <returns>A list of all languages.</returns>
+    /// <example>
+    /// GET /api/Language
+    /// </example>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Language>>> GetLanguages()
     {
-        return await _context.Languages.ToListAsync();
+        return await context.Languages.ToListAsync();
     }
 
-    // GET: api/Language/5
+    /// <summary>
+    /// Retrieves a language by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the language to retrieve.</param>
+    /// <returns>Language with the given ID.</returns>
+    /// <example>
+    /// GET /api/Language/5
+    /// </example>
     [HttpGet("{id}")]
     public async Task<ActionResult<Language>> GetLanguage(int id)
     {
-        var language = await _context.Languages.FindAsync(id);
+        var language = await context.Languages.FindAsync(id);
 
         if (language == null)
         {
@@ -37,17 +46,38 @@ public class LanguageController : ControllerBase
         return language;
     }
 
-    // POST: api/Language
+    /// <summary>
+    /// Creates a new language.
+    /// </summary>
+    /// <param name="language">The language object to create.</param>
+    /// <returns>The created language.</returns>
+    /// <example>
+    /// POST /api/Language
+    /// {
+    ///     "name": "Spanish"
+    /// }
+    /// </example>
     [HttpPost]
     public async Task<ActionResult<Language>> CreateLanguage(Language language)
     {
-        _context.Languages.Add(language);
-        await _context.SaveChangesAsync();
+        context.Languages.Add(language);
+        await context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetLanguage), new { id = language.Id }, language);
     }
 
-    // PUT: api/Language/5
+    /// <summary>
+    /// Updates a specific language.
+    /// </summary>
+    /// <param name="id">The ID of the language to update.</param>
+    /// <param name="language">The updated language object.</param>
+    /// <example>
+    /// PUT /api/Language/5
+    /// {
+    ///     "id": 5,
+    ///     "name": "Spanish"
+    /// }
+    /// </example>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateLanguage(int id, Language language)
     {
@@ -56,11 +86,11 @@ public class LanguageController : ControllerBase
             return BadRequest();
         }
 
-        _context.Entry(language).State = EntityState.Modified;
+        context.Entry(language).State = EntityState.Modified;
 
         try
         {
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -77,24 +107,30 @@ public class LanguageController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/Language/5
+    /// <summary>
+    /// Deletes a specific language.
+    /// </summary>
+    /// <param name="id">The ID of the language to delete.</param>
+    /// <example>
+    /// DELETE /api/Language/5
+    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteLanguage(int id)
     {
-        var language = await _context.Languages.FindAsync(id);
+        var language = await context.Languages.FindAsync(id);
         if (language == null)
         {
             return NotFound();
         }
 
-        _context.Languages.Remove(language);
-        await _context.SaveChangesAsync();
+        context.Languages.Remove(language);
+        await context.SaveChangesAsync();
 
         return NoContent();
     }
 
     private bool LanguageExists(int id)
     {
-        return _context.Languages.Any(e => e.Id == id);
+        return context.Languages.Any(e => e.Id == id);
     }
 }

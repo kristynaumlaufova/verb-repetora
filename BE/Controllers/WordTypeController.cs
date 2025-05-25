@@ -7,27 +7,33 @@ namespace BE.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class WordTypeController : ControllerBase
+public class WordTypeController(ApplicationDbContext context) : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-
-    public WordTypeController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/WordType
+    /// <summary>
+    /// Retrieves all word types from the database.
+    /// </summary>
+    /// <returns>A list of all word types.</returns>
+    /// <example>
+    /// GET /api/WordType
+    /// </example>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<WordType>>> GetWordTypes()
     {
-        return await _context.WordTypes.ToListAsync();
+        return await context.WordTypes.ToListAsync();
     }
 
-    // GET: api/WordType/5
+    /// <summary>
+    /// Retrieves a specific word type by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the word type to retrieve.</param>
+    /// <returns>The requested word type if found.</returns>
+    /// <example>
+    /// GET /api/WordType/5
+    /// </example>
     [HttpGet("{id}")]
     public async Task<ActionResult<WordType>> GetWordType(int id)
     {
-        var wordType = await _context.WordTypes.FindAsync(id);
+        var wordType = await context.WordTypes.FindAsync(id);
 
         if (wordType == null)
         {
@@ -37,17 +43,40 @@ public class WordTypeController : ControllerBase
         return wordType;
     }
 
-    // POST: api/WordType
+    /// <summary>
+    /// Creates a new word type.
+    /// </summary>
+    /// <param name="wordType">The word type object to create.</param>
+    /// <returns>The created word type.</returns>
+    /// <example>
+    /// POST /api/WordType
+    /// {
+    ///     "name": "Noun",
+    ///     "description": "A word that represents a person, place, thing, or idea"
+    /// }
+    /// </example>
     [HttpPost]
     public async Task<ActionResult<WordType>> CreateWordType(WordType wordType)
     {
-        _context.WordTypes.Add(wordType);
-        await _context.SaveChangesAsync();
+        context.WordTypes.Add(wordType);
+        await context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetWordType), new { id = wordType.Id }, wordType);
     }
 
-    // PUT: api/WordType/5
+    /// <summary>
+    /// Updates a specific word type.
+    /// </summary>
+    /// <param name="id">The ID of the word type to update.</param>
+    /// <param name="wordType">The updated word type object.</param>
+    /// <example>
+    /// PUT /api/WordType/5
+    /// {
+    ///     "id": 5,
+    ///     "name": "Noun Updated",
+    ///     "description": "Updated description for nouns"
+    /// }
+    /// </example>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateWordType(int id, WordType wordType)
     {
@@ -56,11 +85,11 @@ public class WordTypeController : ControllerBase
             return BadRequest();
         }
 
-        _context.Entry(wordType).State = EntityState.Modified;
+        context.Entry(wordType).State = EntityState.Modified;
 
         try
         {
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -77,24 +106,30 @@ public class WordTypeController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: api/WordType/5
+    /// <summary>
+    /// Deletes a specific word type.
+    /// </summary>
+    /// <param name="id">The ID of the word type to delete.</param>
+    /// <example>
+    /// DELETE /api/WordType/5
+    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWordType(int id)
     {
-        var wordType = await _context.WordTypes.FindAsync(id);
+        var wordType = await context.WordTypes.FindAsync(id);
         if (wordType == null)
         {
             return NotFound();
         }
 
-        _context.WordTypes.Remove(wordType);
-        await _context.SaveChangesAsync();
+        context.WordTypes.Remove(wordType);
+        await context.SaveChangesAsync();
 
         return NoContent();
     }
 
     private bool WordTypeExists(int id)
     {
-        return _context.WordTypes.Any(e => e.Id == id);
+        return context.WordTypes.Any(e => e.Id == id);
     }
 }

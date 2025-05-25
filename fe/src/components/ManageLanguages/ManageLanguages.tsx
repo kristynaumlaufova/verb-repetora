@@ -1,34 +1,61 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import styles from "./ManageLanguages.module.css";
 import CreateLanguage from "../CreateLanguage/CreateLanguage";
-
-interface Language {
-  id: string;
-  name: string;
-}
+import { languageService, Language } from "../../services/languageService";
 
 const ManageLanguages: React.FC = () => {
-  const [languages, setLanguages] = useState<Language[]>([
-    { id: "ENGLISH", name: "English" },
-    { id: "POLISH", name: "Polish" },
-    { id: "GERMAN", name: "German" },
-  ]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("ENGLISH");
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const navigate = useNavigate();
+  const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
 
-  const handleEdit = (languageId: string) => {
-    // TODO: Implement edit functionality
-    console.log("Edit language:", languageId);
+  useEffect(() => {
+    loadLanguages();
+  }, []);
+
+  const loadLanguages = async () => {
+    try {
+      const data = await languageService.getLanguages();
+      setLanguages(data);
+      if (data.length > 0 && selectedLanguage === null) {
+        setSelectedLanguage(data[0].id);
+      }
+    } catch (error) {
+      console.error("Failed to load languages:", error);
+      // TODO: Add error handling
+    }
   };
 
-  const handleCreateLanguage = (name: string) => {
-    const newLanguage: Language = {
-      id: name.toUpperCase(),
-      name: name,
-    };
-    setLanguages([...languages, newLanguage]);
+  const handleEdit = async (language: Language) => {
+    setEditingLanguage(language);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateOrUpdate = async (name: string) => {
+    try {
+      if (editingLanguage) {
+        const updated = await languageService.updateLanguage(
+          editingLanguage.id,
+          name
+        );
+        setLanguages(
+          languages.map((lang) => (lang.id === updated.id ? updated : lang))
+        );
+      } else {
+        const created = await languageService.createLanguage(name);
+        setLanguages([...languages, created]);
+      }
+      setIsCreateModalOpen(false);
+      setEditingLanguage(null);
+    } catch (error) {
+      console.error("Failed to save language:", error);
+      // TODO: Add error handling
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsCreateModalOpen(false);
+    setEditingLanguage(null);
   };
 
   const truncateName = (name: string): string => {
@@ -58,7 +85,7 @@ const ManageLanguages: React.FC = () => {
               </label>
               <button
                 className={styles.editButton}
-                onClick={() => handleEdit(language.id)}
+                onClick={() => handleEdit(language)}
               >
                 <i className="bi bi-pencil"></i>
               </button>
@@ -76,8 +103,9 @@ const ManageLanguages: React.FC = () => {
 
       <CreateLanguage
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreateLanguage={handleCreateLanguage}
+        onClose={handleModalClose}
+        onCreateLanguage={handleCreateOrUpdate}
+        initialValue={editingLanguage?.name}
       />
     </div>
   );
