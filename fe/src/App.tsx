@@ -4,20 +4,27 @@ import {
   Routes,
   Route,
   useNavigate,
+  Navigate,
 } from "react-router-dom";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
 import MainContent from "./components/MainContent/MainContent";
 import ManageLanguages from "./components/ManageLanguages/ManageLanguages";
+import Login from "./components/Login/Login";
 import "./App.css";
 
 const AppContent: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState("ENGLISH");
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // TODO: Implement proper auth
   const navigate = useNavigate();
 
   const handleCreateNewLanguage = () => {
     navigate("/manage-languages");
   };
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <div className="App">
@@ -50,7 +57,10 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/*" element={<AppContent />} />
+      </Routes>
     </Router>
   );
 }

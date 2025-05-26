@@ -10,7 +10,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text);
   margin-bottom: 2rem;
   text-align: left;
 }
@@ -30,8 +30,7 @@
   flex-direction: column;
   gap: 0.5rem;
   height: calc(100% - 8rem);
-  scrollbar-width: thin;
-  scrollbar-color: #2E96FF transparent;
+  scrollbar-width: thin;  scrollbar-color: var(--main-light) transparent;
 }
 
 /* Scrollbar styling */
@@ -44,16 +43,16 @@
 }
 
 .languagesWrapper::-webkit-scrollbar-thumb {
-  background: #2E96FF;
+  background: var(--main-light);
 }
 
 .languagesWrapper::-webkit-scrollbar-thumb:hover {
-  background: #9C27B0;
+  background: var(--accent-1);
 }
 
 /* Firefox scrollbar styling */
 .languagesWrapper:hover {
-  scrollbar-color: #9C27B0 transparent;
+  scrollbar-color: var(--accent-1) transparent;
 }
 
 .languageItem {
@@ -93,7 +92,7 @@
 }
 
 .radioInput:checked + .radioControl {
-  border-color: #2E96FF;
+  border-color: var(--main-light);
 }
 
 .radioInput:checked + .radioControl::after {
@@ -103,13 +102,13 @@
   left: 3px;
   width: 8px;
   height: 8px;
-  background-color: #2E96FF;
+  background-color: var(--main-light);
   border-radius: 50%;
 }
 
 .languageName {
   font-size: 1rem;
-  color: #374151;
+  color: var(--text);
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -6,22 +6,21 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 4px;
-  margin: 0 0.5rem;
-  color: #374151;
+  margin: 0 0.5rem;  color: var(--text);
 }
 
 .menuItem:hover {
-  color: #9C27B0;
+  color: var(--accent-1);
   background-color: rgba(156, 39, 176, 0.05);
 }
 
 .active {
   background-color: rgba(46, 150, 255, 0.05);
-  color: #2E96FF;
+  color: var(--main-light);
 }
 
 .active:hover {
-  color: #9C27B0;
+  color: var(--accent-1);
   background-color: rgba(156, 39, 176, 0.05);
 }
 

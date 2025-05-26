@@ -18,17 +18,16 @@
   border-radius: 4px;
   background: none;
   font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
+  cursor: pointer;  display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #2E96FF;
+  color: var(--main-light);
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .langButton:hover {
-  color: #9C27B0;
+  color: var(--accent-1);
 }
 
 .select {
@@ -79,28 +78,27 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  color: #374151;
+  justify-content: space-between;  color: var(--text);
   font-size: 0.9rem;
   transition: color 0.2s ease;
 }
 
 .dropdownItem:hover {
-  color: #9C27B0;
-  background-color: #f5f5f5;
+  color: var(--accent-1);
+  background-color: var(--bg-secondary);
 }
 
 .dropdownItem:hover i {
-  color: #9C27B0;
+  color: var(--accent-1);
 }
 
 .selected {
-  color: #2E96FF;
-  background-color: #f5f5f5;
+  color: var(--main-light);
+  background-color: var(--bg-secondary);
 }
 
 .selected i {
-  color: #2E96FF;
+  color: var(--main-light);
   font-size: 1.1rem;
 }
 
@@ -109,7 +107,7 @@
 }
 
 .createNew {
-  color: #2E96FF;
+  color: var(--main-light);
 }
 
 .createNewContent {
@@ -123,7 +121,7 @@
 }
 
 .createNew:hover {
-  color: #9C27B0;
+  color: var(--accent-1);
 }
 
 .userInfo {
@@ -135,11 +133,11 @@
 
 .userName {
   font-weight: 500;
-  color: #111827;
+  color: var(--text);
 }
 
 .userEmail {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 0.25rem;
 }

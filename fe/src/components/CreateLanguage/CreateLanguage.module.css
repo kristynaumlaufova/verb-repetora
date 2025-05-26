@@ -23,19 +23,19 @@
 
 .formGroup label {
   font-weight: 500;
-  color: #374151;
+  color: var(--text);
 }
 
 .formGroup input {
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 1rem;
 }
 
 .formGroup input:focus {
   outline: none;
-  border-color: #2E96FF;
+  border-color: var(--main-light);
   box-shadow: 0 0 0 2px rgba(46, 150, 255, 0.1);
 }
 
@@ -66,13 +66,13 @@
 }
 
 .submitButton {
-  background-color: #2E96FF;
+  background-color: var(--main-light);
   border: none;
   color: white;
 }
 
 .submitButton:hover {
-  background-color: #9C27B0;
+  background-color: var(--accent-1);
 }
 
 .modalOverlay {
@@ -100,7 +100,7 @@
 .title {
   font-size: 1.125rem;
   font-weight: 500;
-  color: #111827;
+  color: var(--text);
   margin: 0 0 1.5rem 0;
 }
 
@@ -111,7 +111,7 @@
 .inputGroup label {
   display: block;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text);
   margin-bottom: 0.5rem;
 }
 
@@ -156,15 +156,15 @@
 }
 
 .createButton {
-  background: #2E96FF;
+  background: var(--main-light);
   color: white;
 }
 
 .createButton:hover {
-  background: #2179d3;
+  background: var(--main-dark);
 }
 
 .createButton:disabled {
-  background: #d1d5db;
+  background: var(--border-color);
   cursor: not-allowed;
 }
