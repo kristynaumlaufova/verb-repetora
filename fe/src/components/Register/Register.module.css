@@ -7,8 +7,8 @@
     padding: 20px;
 }
 
-.loginCard {
-    background: white;
+.registerCard {
+    background: var(--bg-primary);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -52,7 +52,8 @@ h2 {
     color: var(--text);
 }
 
-.inputGroup input {
+.inputGroup input,
+.inputGroup select {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -60,17 +61,11 @@ h2 {
     transition: border-color 0.2s;
 }
 
-.inputGroup input:focus {
+.inputGroup input:focus,
+.inputGroup select:focus {
     outline: none;
-    border-color: var(--accent-1);
+    border-color: var(--main-light);
     box-shadow: 0 0 0 2px rgba(46, 150, 255, 0.1);
-}
-
-.options {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    font-size: 0.875rem;
 }
 
 .submitButton {
@@ -88,26 +83,26 @@ h2 {
     background-color: var(--accent-1-dark);
 }
 
-.signup {
+.login {
     text-align: center;
     margin-top: 1.5rem;
     font-size: 0.875rem;
-    color: #4B5563;
+    color: var(--text-secondary);
 }
 
-.signup a {
+.login a {
     color: var(--main-light);
     text-decoration: none;
     font-weight: 500;
 }
 
-.signup a:hover {
+.login a:hover {
     text-decoration: underline;
     color: var(--accent-1);
 }
 
 @media (max-width: 640px) {
-    .loginCard {
+    .registerCard {
         padding: 1.5rem;
     }
 }

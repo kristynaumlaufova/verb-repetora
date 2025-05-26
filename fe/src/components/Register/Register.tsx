@@ -1,0 +1,83 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import styles from "./Register.module.css";
+
+const Register = () => {
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    language: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Implement registration logic
+    console.log("Register form submitted:", formData);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.registerCard}>
+        <div className={styles.logoContainer}>
+          <h1>VerbRepetora</h1>
+        </div>
+        <h2>Sign Up</h2>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>{" "}
+          <div className={styles.inputGroup}>
+            <label htmlFor="language">Language to learn</label>
+            <input
+              type="text"
+              id="language"
+              name="language"
+              value={formData.language}
+              onChange={handleChange}
+              placeholder="e.g. English, Spanish, French"
+              required
+            />
+          </div>
+          <button type="submit" className={styles.submitButton}>
+            Create account
+          </button>
+        </form>
+        <div className={styles.login}>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;

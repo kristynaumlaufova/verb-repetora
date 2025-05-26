@@ -11,12 +11,13 @@ import TopBar from "./components/TopBar/TopBar";
 import MainContent from "./components/MainContent/MainContent";
 import ManageLanguages from "./components/ManageLanguages/ManageLanguages";
 import Login from "./components/Login/Login";
+import Register from "./components/Register/Register";
 import "./App.css";
 
 const AppContent: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState("ENGLISH");
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // TODO: Implement proper auth
   const navigate = useNavigate();
+  const isAuthenticated = false; // TODO: Replace with actual auth state
 
   const handleCreateNewLanguage = () => {
     navigate("/manage-languages");
@@ -59,6 +60,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/*" element={<AppContent />} />
       </Routes>
     </Router>

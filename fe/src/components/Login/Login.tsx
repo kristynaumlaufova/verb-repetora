@@ -1,16 +1,14 @@
 import React, { useState } from "react";
 import styles from "./Login.module.css";
-import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement actual login logic
-    console.log("Login attempted with:", email, password);
+    console.log("Login attempted with:", username, password);
   };
 
   return (
@@ -23,12 +21,12 @@ const Login: React.FC = () => {
         <h2>Sign in</h2>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="username">Username</label>
             <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -43,24 +41,13 @@ const Login: React.FC = () => {
               required
             />
           </div>
-
-          <div className={styles.options}>
-            <label className={styles.remember}>
-              <input type="checkbox" />
-              Remember me
-            </label>
-            <a href="#" className={styles.forgotPassword}>
-              Forgot password?
-            </a>
-          </div>
-
           <button type="submit" className={styles.submitButton}>
             Sign in
           </button>
         </form>
 
         <p className={styles.signup}>
-          Don't have an account? <a href="#">Sign up</a>
+          Don't have an account? <a href="/register">Sign up</a>
         </p>
       </div>
     </div>
