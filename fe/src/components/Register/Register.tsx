@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Register.module.css";
 
 const Register: React.FC = () => {
@@ -11,12 +11,13 @@ const Register: React.FC = () => {
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError("");
-      await authService.register(formData);
+      await register(formData.username, formData.password, formData.language);
       navigate("/");
     } catch (err: any) {
       setError(err.response?.data || "Failed to register. Please try again.");

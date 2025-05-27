@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,7 +6,7 @@ import {
   useNavigate,
   Navigate,
 } from "react-router-dom";
-import { authService } from "./services/authService";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
 import MainContent from "./components/MainContent/MainContent";
@@ -17,14 +17,8 @@ import "./App.css";
 
 const AppContent: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState("ENGLISH");
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    authService.isAuthenticated()
-  );
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    setIsAuthenticated(authService.isAuthenticated());
-  }, []);
 
   const handleCreateNewLanguage = () => {
     navigate("/manage-languages");
@@ -41,7 +35,7 @@ const AppContent: React.FC = () => {
         <TopBar
           currentLanguage={currentLanguage}
           onLanguageChange={setCurrentLanguage}
-          userName={authService.getUser()?.username || ""}
+          userName={user?.username || ""}
           userEmail=""
           onCreateNewLanguage={handleCreateNewLanguage}
         />
@@ -65,11 +59,13 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/*" element={<AppContent />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/*" element={<AppContent />} />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }

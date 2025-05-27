@@ -2,6 +2,11 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5195/api';
 
+// Configure axios defaults
+axios.defaults.withCredentials = true;
+axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.headers.common['Accept'] = 'application/json';
+
 axios.interceptors.response.use(
     response => response,
     error => {
@@ -49,9 +54,7 @@ export const authService = {
 
     async register(data: RegisterRequest): Promise<AuthResponse> {
         const response = await axios.post<AuthResponse>(`${API_URL}/AppUser/register`, data);
-        console.log(response);
         if (response.data.user) {
-            console.log('test');
             localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         return response.data;
@@ -61,15 +64,14 @@ export const authService = {
         const userStr = localStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     },
-    
+
     async logout(): Promise<void> {
         try {
             await axios.post(`${API_URL}/AppUser/logout`);
-        } catch (error) {
-            console.error('Failed to log out from server:', error);
-        } finally {
             localStorage.removeItem('user');
             window.dispatchEvent(new Event('auth-change'));
+        } catch (error) {
+            throw error;
         }
     },
 

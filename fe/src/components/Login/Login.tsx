@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Login.module.css";
 
 const Login: React.FC = () => {
@@ -8,12 +8,13 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError("");
-      await authService.login({ username, password });
+      await login(username, password);
       navigate("/");
     } catch (err: any) {
       setError("Failed to login. Please try again.");

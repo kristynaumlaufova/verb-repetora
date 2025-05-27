@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import styles from "./TopBar.module.css";
-import { authService } from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface TopBarProps {
   currentLanguage: string;
@@ -17,13 +17,13 @@ const TopBar: React.FC<TopBarProps> = ({
   onLanguageChange,
   userName,
   userEmail,
-  onCreateNewLanguage,
 }) => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -115,15 +115,13 @@ const TopBar: React.FC<TopBarProps> = ({
             <div className={styles.divider}></div>
             <button className={styles.dropdownItem}>
               <i className="bi bi-person"></i> Profile
-            </button>{" "}
+            </button>
             <button
               className={styles.dropdownItem}
               onClick={async () => {
                 try {
-                  await authService.logout();
-                  navigate("/login");
-                } catch (error) {
-                  console.error("Error during logout:", error);
+                  await logout();
+                } finally {
                   navigate("/login");
                 }
               }}

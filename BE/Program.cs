@@ -1,36 +1,31 @@
-using BE.Data;
-using BE.Controllers;
-using BE.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
+using BE.Data;
+using BE.Controllers;
+using BE.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Get the connection string from appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Register LanguageController as a service
 builder.Services.AddScoped<LanguageController>();
 
-// Configure Identity
 builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 {
-    // Password settings
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequireUppercase = true;
     options.Password.RequiredLength = 8;
 
-    // User settings
     options.User.RequireUniqueEmail = false;
     options.SignIn.RequireConfirmedEmail = false;
 })
@@ -43,8 +38,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromHours(4);
     options.SlidingExpiration = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = builder.Environment.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
 
     // Custom redirection for unauthorized or logged out users
     options.LoginPath = "/login";
@@ -54,8 +49,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     // Cookie events
     options.Events.OnRedirectToLogin = context =>
     {
-        if (context.Request.Path.StartsWithSegments("/api") &&
-            context.Response.StatusCode == 200)
+        if (context.Request.Path.Value?.EndsWith(options.LogoutPath, StringComparison.OrdinalIgnoreCase) == true)
+        {
+            context.Response.StatusCode = 200;
+            return Task.CompletedTask;
+        }
+
+        if (context.Request.Path.StartsWithSegments("/api"))
         {
             context.Response.StatusCode = 401;
             return Task.CompletedTask;
@@ -66,19 +66,6 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Add CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.SetIsOriginAllowed(_ => true) // Allow any origin in development
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
-    });
-});
-
-// Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -108,21 +95,18 @@ var staticFileOptions = new StaticFileOptions
     ServeUnknownFileTypes = true
 };
 
-// Configure default files
 var defaultFilesOptions = new DefaultFilesOptions();
 defaultFilesOptions.DefaultFileNames.Clear();
 defaultFilesOptions.DefaultFileNames.Add("index.html");
 
 app.UseRouting();
 
-// Configure CORS before authentication
 app.UseCors(options => options
-    .WithOrigins("http://localhost:3000")
+    .SetIsOriginAllowed(origin => true)
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials());
 
-// In development, don't force HTTPS
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -131,14 +115,11 @@ if (!app.Environment.IsDevelopment())
 app.UseDefaultFiles(defaultFilesOptions);
 app.UseStaticFiles(staticFileOptions);
 
-// Authentication and Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map API controllers
 app.MapControllers();
 
-// Apply migrations at startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -151,7 +132,6 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
         logger.LogInformation("Database migration completed successfully.");
 
-        // Initialize role manager
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
         if (!await roleManager.RoleExistsAsync("User"))
         {
@@ -164,7 +144,7 @@ using (var scope = app.Services.CreateScope())
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while migrating the database or initializing roles.");
-        throw; // Rethrow the exception to prevent the application from starting with an incomplete database
+        throw;
     }
 }
 

@@ -65,7 +65,6 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     {
         try
         {
-            // Check if a language with this name already exists for this user
             var existingLanguage = await context.Languages
                 .FirstOrDefaultAsync(l => l.UserId == language.UserId && l.Name == language.Name);
 
@@ -77,11 +76,10 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
             context.Languages.Add(language);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetLanguage), new { id = language.Id }, language);
+            return Ok(language);
         }
-        catch (DbUpdateException ex)
+        catch (DbUpdateException)
         {
-            // Log the exception details here
             return StatusCode(500, "Failed to create language. Please try again.");
         }
     }

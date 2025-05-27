@@ -1,5 +1,5 @@
 using System.Security.Claims;
-
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using BE.Models;
 using BE.Models.Dto;
+using BE.Data;
 
 namespace BE.Controllers;
 
@@ -19,7 +20,7 @@ namespace BE.Controllers;
 public class AppUserController(
     UserManager<AppUser> userManager,
     SignInManager<AppUser> signInManager,
-    LanguageController languageController) : ControllerBase
+    ApplicationDbContext context) : ControllerBase
 {
     /// <summary>
     /// Registers a new user.
@@ -65,23 +66,35 @@ public class AppUserController(
             UpdatedAt = DateTime.UtcNow
         };
 
-        var languageResult = await languageController.CreateLanguage(language);
-        if (languageResult.Value != null)
+        try
         {
+            var existingLanguage = await context.Languages
+                .FirstOrDefaultAsync(l => l.UserId == user.Id && l.Name == request.Language);
+
+            if (existingLanguage != null)
+            {
+                await userManager.DeleteAsync(user);
+                return BadRequest("A language with this name already exists");
+            }
+
+            context.Languages.Add(language);
+            await context.SaveChangesAsync();
+
             await signInManager.SignInAsync(user, isPersistent: false);
 
             return Ok(new AuthResponse(
                 Message: "Registration successful",
                 User: new UserDto(
                     Id: user.Id,
-                    Username: user.UserName ?? string.Empty,
-                    Languages: [new LanguageDto(languageResult.Value.Id, request.Language)]
+                    Username: user.UserName ?? ""
                 )
             ));
         }
-
-        await userManager.DeleteAsync(user);
-        return BadRequest("Failed to create language");
+        catch (Exception)
+        {
+            await userManager.DeleteAsync(user);
+            return BadRequest("Failed to create language");
+        }
     }
 
     /// <summary>
@@ -114,8 +127,7 @@ public class AppUserController(
             Message: "Login successful",
             User: new UserDto(
                 Id: user.Id,
-                Username: user.UserName ?? string.Empty,
-                Languages: []
+                Username: user.UserName ?? ""
             )
         ));
     }
@@ -145,8 +157,7 @@ public class AppUserController(
 
         return Ok(new UserDto(
             Id: user.Id,
-            Username: user.UserName ?? string.Empty,
-            Languages: []
+            Username: user.UserName ?? ""
         ));
     }
 

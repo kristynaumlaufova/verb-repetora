@@ -2,10 +2,7 @@ namespace BE.Models.Dto;
 
 public record AuthResponse(string Message, UserDto User);
 
-public record UserDto(
-    int Id,
-    string Username,
-    IEnumerable<LanguageDto> Languages);
+public record UserDto(int Id, string Username);
 
 public record LanguageDto(int Id, string Name);
 
