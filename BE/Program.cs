@@ -8,16 +8,19 @@ using BE.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
+// Connect DB
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddControllers();
+
+// Register services
 builder.Services.AddScoped<LanguageController>();
 
+// Set authentication policy
 builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 {
     options.Password.RequireDigit = true;
@@ -29,7 +32,6 @@ builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
     options.User.RequireUniqueEmail = false;
     options.SignIn.RequireConfirmedEmail = false;
 })
-
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
@@ -39,14 +41,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(4);
     options.SlidingExpiration = true;
     options.Cookie.SameSite = builder.Environment.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.None : CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
-    // Custom redirection for unauthorized or logged out users
     options.LoginPath = "/login";
     options.LogoutPath = "/logout";
     options.AccessDeniedPath = "/login";
 
-    // Cookie events
     options.Events.OnRedirectToLogin = context =>
     {
         if (context.Request.Path.Value?.EndsWith(options.LogoutPath, StringComparison.OrdinalIgnoreCase) == true)
@@ -66,6 +66,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
+// Configrue swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -78,7 +79,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Enable swagger for development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -120,6 +121,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Application initialization
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

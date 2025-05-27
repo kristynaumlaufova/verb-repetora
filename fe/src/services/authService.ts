@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5195/api';
+import config from '../config';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
@@ -43,17 +42,14 @@ export interface AuthResponse {
     user: UserDto;
 }
 
-export const authService = {
-    async login(credentials: LoginRequest): Promise<AuthResponse> {
-        const response = await axios.post<AuthResponse>(`${API_URL}/AppUser/login`, credentials);
+export const authService = {    async login(credentials: LoginRequest): Promise<AuthResponse> {
+        const response = await axios.post<AuthResponse>(`${config.BASE_API_URL}/AppUser/login`, credentials);
         if (response.data.user) {
             localStorage.setItem('user', JSON.stringify(response.data.user));
         }
         return response.data;
-    },
-
-    async register(data: RegisterRequest): Promise<AuthResponse> {
-        const response = await axios.post<AuthResponse>(`${API_URL}/AppUser/register`, data);
+    },    async register(data: RegisterRequest): Promise<AuthResponse> {
+        const response = await axios.post<AuthResponse>(`${config.BASE_API_URL}/AppUser/register`, data);
         if (response.data.user) {
             localStorage.setItem('user', JSON.stringify(response.data.user));
         }
@@ -63,11 +59,9 @@ export const authService = {
     getUser(): UserDto | null {
         const userStr = localStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
-    },
-
-    async logout(): Promise<void> {
+    },    async logout(): Promise<void> {
         try {
-            await axios.post(`${API_URL}/AppUser/logout`);
+            await axios.post(`${config.BASE_API_URL}/AppUser/logout`);
             localStorage.removeItem('user');
             window.dispatchEvent(new Event('auth-change'));
         } catch (error) {
