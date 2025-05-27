@@ -8,6 +8,6 @@ public class AppUser : IdentityUser<int>
     public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
-    public ICollection<Language> Languages { get; set; } = new List<Language>();
-    public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
+    public ICollection<Language> Languages { get; set; } = [];
+    public ICollection<Lesson> Lessons { get; set; } = [];
 }

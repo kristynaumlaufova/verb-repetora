@@ -64,7 +64,7 @@ h2 {
 .inputGroup input:focus,
 .inputGroup select:focus {
     outline: none;
-    border-color: var(--main-light);
+    border-color: var(--accent-1);
     box-shadow: 0 0 0 2px rgba(46, 150, 255, 0.1);
 }
 
@@ -102,9 +102,9 @@ h2 {
 }
 
 .error {
-    color: #dc3545;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    color: var(--danger-dark);
+    background-color: var(--danger-light);
+    border: 1px solid var(--danger-border);
     padding: 0.75rem;
     margin-bottom: 1rem;
     border-radius: 4px;

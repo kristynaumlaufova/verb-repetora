@@ -19,7 +19,7 @@ const Register: React.FC = () => {
       await authService.register(formData);
       navigate("/");
     } catch (err: any) {
-      setError("Failed to register. Please try again.");
+      setError(err.response?.data || "Failed to register. Please try again.");
     }
   };
 

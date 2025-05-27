@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./TopBar.module.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import styles from "./TopBar.module.css";
 import { authService } from "../../services/authService";
 
 interface TopBarProps {

@@ -15,8 +15,9 @@
   --accent-3: #26A69A;
   --accent-3-dark: #16635b;
   
-  --danger-light: #E99797;
-  --danger-dark: #D32F2F;
+  --danger-light: #f8d7da;
+  --danger-dark: #d61f1f;
+  --danger-border: #f5c6cb;
   --success-light: #80CCA8;
   --success-dark: #009951
 }

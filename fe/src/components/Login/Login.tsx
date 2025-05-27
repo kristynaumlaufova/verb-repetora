@@ -14,9 +14,9 @@ const Login: React.FC = () => {
     try {
       setError("");
       await authService.login({ username, password });
-      navigate("/"); // Redirect to home page after successful login
+      navigate("/");
     } catch (err: any) {
-      setError(err.response?.data || "Failed to login. Please try again.");
+      setError("Failed to login. Please try again.");
     }
   };
 
