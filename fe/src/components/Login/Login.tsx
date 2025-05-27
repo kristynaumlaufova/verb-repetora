@@ -1,14 +1,23 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { authService } from "../../services/authService";
 import styles from "./Login.module.css";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement actual login logic
-    console.log("Login attempted with:", username, password);
+    try {
+      setError("");
+      await authService.login({ username, password });
+      navigate("/"); // Redirect to home page after successful login
+    } catch (err: any) {
+      setError(err.response?.data || "Failed to login. Please try again.");
+    }
   };
 
   return (
@@ -19,6 +28,7 @@ const Login: React.FC = () => {
         </div>
 
         <h2>Sign in</h2>
+        {error && <div className={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
             <label htmlFor="username">Username</label>

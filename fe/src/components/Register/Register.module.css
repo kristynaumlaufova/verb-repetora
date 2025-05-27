@@ -101,6 +101,16 @@ h2 {
     color: var(--accent-1);
 }
 
+.error {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
 @media (max-width: 640px) {
     .registerCard {
         padding: 1.5rem;

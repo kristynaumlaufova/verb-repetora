@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./TopBar.module.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import { authService } from "../../services/authService";
 
 interface TopBarProps {
   currentLanguage: string;
@@ -114,8 +115,19 @@ const TopBar: React.FC<TopBarProps> = ({
             <div className={styles.divider}></div>
             <button className={styles.dropdownItem}>
               <i className="bi bi-person"></i> Profile
-            </button>
-            <button className={styles.dropdownItem}>
+            </button>{" "}
+            <button
+              className={styles.dropdownItem}
+              onClick={async () => {
+                try {
+                  await authService.logout();
+                  navigate("/login");
+                } catch (error) {
+                  console.error("Error during logout:", error);
+                  navigate("/login");
+                }
+              }}
+            >
               <i className="bi bi-box-arrow-right"></i> Sign out
             </button>
           </div>

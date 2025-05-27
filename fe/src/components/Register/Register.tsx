@@ -1,24 +1,29 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services/authService";
 import styles from "./Register.module.css";
 
-const Register = () => {
+const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     username: "",
-    email: "",
     password: "",
     language: "",
   });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement registration logic
-    console.log("Register form submitted:", formData);
+    try {
+      setError("");
+      await authService.register(formData);
+      navigate("/");
+    } catch (err: any) {
+      setError("Failed to register. Please try again.");
+    }
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -33,6 +38,7 @@ const Register = () => {
           <h1>VerbRepetora</h1>
         </div>
         <h2>Sign Up</h2>
+        {error && <div className={styles.error}>{error}</div>}
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label htmlFor="username">Username</label>
@@ -55,7 +61,7 @@ const Register = () => {
               onChange={handleChange}
               required
             />
-          </div>{" "}
+          </div>
           <div className={styles.inputGroup}>
             <label htmlFor="language">Language to learn</label>
             <input

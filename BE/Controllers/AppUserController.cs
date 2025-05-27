@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BE.Data;
 using BE.Models;
+using BE.Models.Dto;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 
 namespace BE.Controllers;
 
@@ -10,19 +14,130 @@ namespace BE.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class AppUserController(ApplicationDbContext context) : ControllerBase
+[EnableCors]
+public class AppUserController(
+    UserManager<AppUser> userManager,
+    SignInManager<AppUser> signInManager,
+    LanguageController languageController) : ControllerBase
 {
+
     /// <summary>
-    /// Retrieves all users from the database.
+    /// Registers a new user.
     /// </summary>
-    /// <returns>A list of all users.</returns>
+    /// <param name="request">The registration details.</param>
+    /// <returns>A response indicating the result of the registration.</returns>
     /// <example>
-    /// GET /api/AppUser
+    /// POST /api/AppUser/register
+    /// {
+    ///     "username": "johndoe",
+    ///     "password": "P@ssw0rd",
+    ///     "language": "English"
+    /// }
     /// </example>
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
+    [HttpPost("register")]
+    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
     {
-        return await context.Users.ToListAsync();
+        if (await userManager.FindByNameAsync(request.Username) != null)
+        {
+            return BadRequest("Username already exists");
+        }
+
+        var user = new AppUser
+        {
+            UserName = request.Username,
+            Email = request.Username + "@placeholder.com", // Identity requires email
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var result = await userManager.CreateAsync(user, request.Password);
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Errors.First().Description);
+        }
+
+        // Add user to the User role
+        await userManager.AddToRoleAsync(user, "User");
+
+        // Create the language for the user
+        var language = new Language
+        {
+            Name = request.Language,
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        }; var languageResult = await languageController.CreateLanguage(language);
+        if (languageResult.Result is CreatedAtActionResult)
+        {
+            await signInManager.SignInAsync(user, isPersistent: false);
+
+            return Ok(new AuthResponse
+            {
+                Message = "Registration successful",
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.UserName ?? string.Empty,
+                    Languages = new List<LanguageDto>
+                    {
+                        new LanguageDto
+                        {
+                            Name = request.Language
+                        }
+                    }
+                }
+            });
+        }
+
+        // If language creation failed, delete the user and return error
+        await userManager.DeleteAsync(user);
+        return BadRequest("Failed to create language");
+    }
+
+    /// <summary>
+    /// Logs in an existing user.
+    /// </summary>
+    /// <param name="request">The login credentials.</param>
+    /// <returns>A response containing the authentication token and user details.</returns>
+    /// <example>
+    /// POST /api/AppUser/login
+    /// {
+    ///     "username": "johndoe",
+    ///     "password": "P@ssw0rd"
+    /// }
+    /// </example>
+    [HttpPost("login")]
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
+    {
+        var user = await userManager.FindByNameAsync(request.Username);
+        if (user == null)
+        {
+            return Unauthorized("Invalid username or password");
+        }
+
+        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        if (!result.Succeeded)
+        {
+            return Unauthorized("Invalid username or password");
+        }
+
+        // Load user's languages
+        var languages = await userManager.Users
+            .Where(u => u.Id == user.Id)
+            .SelectMany(u => u.Languages)
+            .Select(l => new LanguageDto { Id = l.Id, Name = l.Name })
+            .ToListAsync();
+
+        return Ok(new AuthResponse
+        {
+            Message = "Login successful",
+            User = new UserDto
+            {
+                Id = user.Id,
+                Username = user.UserName ?? string.Empty,
+                Languages = languages
+            }
+        });
     }
 
     /// <summary>
@@ -33,106 +148,46 @@ public class AppUserController(ApplicationDbContext context) : ControllerBase
     /// <example>
     /// GET /api/AppUser/5
     /// </example>
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<AppUser>> GetUser(int id)
     {
-        var user = await context.Users.FindAsync(id);
+        if (User.FindFirstValue(ClaimTypes.NameIdentifier) != id.ToString())
+        {
+            return Forbid();
+        }
 
+        var user = await userManager.FindByIdAsync(id.ToString());
         if (user == null)
         {
             return NotFound();
         }
 
-        return user;
+        var languages = await userManager.Users
+            .Where(u => u.Id == id)
+            .SelectMany(u => u.Languages)
+            .Select(l => new { id = l.Id, name = l.Name })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            id = user.Id,
+            username = user.UserName,
+            languages = languages
+        });
     }
 
     /// <summary>
-    /// Creates a new user.
+    /// Logs out the current user.
     /// </summary>
-    /// <param name="user">The user object to create.</param>
-    /// <returns>The created user.</returns>
     /// <example>
-    /// POST /api/AppUser
-    /// {
-    ///     "email": "john.doe@example.com",
-    ///     "name": "John Doe"
-    /// }
+    /// POST /api/AppUser/logout
     /// </example>
-    [HttpPost]
-    public async Task<ActionResult<AppUser>> CreateUser(AppUser user)
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
     {
-        context.Users.Add(user);
-        await context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
-    }
-
-    /// <summary>
-    /// Updates a specific user.
-    /// </summary>
-    /// <param name="id">The ID of the user to update.</param>
-    /// <param name="user">The updated user object.</param>
-    /// <example>
-    /// PUT /api/AppUser/5
-    /// {
-    ///     "id": 5,
-    ///     "email": "john.doe.updated@example.com",
-    ///     "name": "John Doe"
-    /// }
-    /// </example>
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, AppUser user)
-    {
-        if (id != user.Id)
-        {
-            return BadRequest();
-        }
-
-        context.Entry(user).State = EntityState.Modified;
-
-        try
-        {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!UserExists(id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Deletes a specific user.
-    /// </summary>
-    /// <param name="id">The ID of the user to delete.</param>
-    /// <example>
-    /// DELETE /api/AppUser/5
-    /// </example>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteUser(int id)
-    {
-        var user = await context.Users.FindAsync(id);
-        if (user == null)
-        {
-            return NotFound();
-        }
-
-        context.Users.Remove(user);
-        await context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    private bool UserExists(int id)
-    {
-        return context.Users.Any(e => e.Id == id);
+        await signInManager.SignOutAsync();
+        return Ok(new { message = "Successfully logged out" });
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using BE.Data;
 using BE.Models;
 
@@ -10,6 +11,7 @@ namespace BE.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LanguageController(ApplicationDbContext context) : ControllerBase
 {
     /// <summary>
@@ -60,10 +62,27 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Language>> CreateLanguage(Language language)
     {
-        context.Languages.Add(language);
-        await context.SaveChangesAsync();
+        try
+        {
+            // Check if a language with this name already exists for this user
+            var existingLanguage = await context.Languages
+                .FirstOrDefaultAsync(l => l.UserId == language.UserId && l.Name == language.Name);
 
-        return CreatedAtAction(nameof(GetLanguage), new { id = language.Id }, language);
+            if (existingLanguage != null)
+            {
+                return BadRequest("A language with this name already exists");
+            }
+
+            context.Languages.Add(language);
+            await context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetLanguage), new { id = language.Id }, language);
+        }
+        catch (DbUpdateException ex)
+        {
+            // Log the exception details here
+            return StatusCode(500, "Failed to create language. Please try again.");
+        }
     }
 
     /// <summary>

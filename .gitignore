@@ -6,6 +6,7 @@ obj/
 *.cache
 *.log
 *.vs/
+appsettings.Development.json
 
 # Node.js dependencies
 node_modules/

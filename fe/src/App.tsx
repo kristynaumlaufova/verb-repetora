@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +6,7 @@ import {
   useNavigate,
   Navigate,
 } from "react-router-dom";
+import { authService } from "./services/authService";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
 import MainContent from "./components/MainContent/MainContent";
@@ -16,8 +17,14 @@ import "./App.css";
 
 const AppContent: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState("ENGLISH");
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    authService.isAuthenticated()
+  );
   const navigate = useNavigate();
-  const isAuthenticated = false; // TODO: Replace with actual auth state
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated());
+  }, []);
 
   const handleCreateNewLanguage = () => {
     navigate("/manage-languages");
@@ -34,8 +41,8 @@ const AppContent: React.FC = () => {
         <TopBar
           currentLanguage={currentLanguage}
           onLanguageChange={setCurrentLanguage}
-          userName="John Doue"
-          userEmail="jdoe@acme.com"
+          userName={authService.getUser()?.username || ""}
+          userEmail=""
           onCreateNewLanguage={handleCreateNewLanguage}
         />
         <Routes>

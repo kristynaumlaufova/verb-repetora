@@ -1,16 +1,12 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using BE.Models;
 
 namespace BE.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<AppUser, IdentityRole<int>, int>(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
-    {
-    }
-
-    public DbSet<AppUser> Users { get; set; }
     public DbSet<Language> Languages { get; set; }
     public DbSet<Lesson> Lessons { get; set; }
     public DbSet<WordType> WordTypes { get; set; }
@@ -20,18 +16,8 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        // Configure unique constraints
-        modelBuilder.Entity<AppUser>()
-            .HasIndex(u => u.Username)
-            .IsUnique();
-
-        modelBuilder.Entity<AppUser>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
-
         modelBuilder.Entity<Language>()
-            .HasIndex(l => l.Name)
+            .HasIndex(l => new { l.UserId, l.Name })
             .IsUnique();
 
         modelBuilder.Entity<Lesson>()
