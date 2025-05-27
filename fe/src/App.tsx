@@ -36,7 +36,6 @@ const AppContent: React.FC = () => {
           currentLanguage={currentLanguage}
           onLanguageChange={setCurrentLanguage}
           userName={user?.username || ""}
-          userEmail=""
           onCreateNewLanguage={handleCreateNewLanguage}
         />
         <Routes>
