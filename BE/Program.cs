@@ -102,8 +102,8 @@ defaultFilesOptions.DefaultFileNames.Add("index.html");
 
 app.UseRouting();
 
-app.UseCors(options => options
-    .SetIsOriginAllowed(origin => true)
+app.UseCors(policy => policy
+    .WithOrigins("http://localhost:3000")
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials());

@@ -42,7 +42,8 @@ export interface AuthResponse {
     user: UserDto;
 }
 
-export const authService = {    async login(credentials: LoginRequest): Promise<AuthResponse> {
+export const authService = {    
+    async login(credentials: LoginRequest): Promise<AuthResponse> {
         const response = await axios.post<AuthResponse>(`${config.BASE_API_URL}/AppUser/login`, credentials);
         if (response.data.user) {
             localStorage.setItem('user', JSON.stringify(response.data.user));

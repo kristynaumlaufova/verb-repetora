@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +15,6 @@ namespace BE.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[EnableCors]
 public class AppUserController(
     UserManager<AppUser> userManager,
     SignInManager<AppUser> signInManager,
@@ -122,6 +120,8 @@ public class AppUserController(
         {
             return Unauthorized("Invalid username or password");
         }
+
+        await signInManager.SignInAsync(user, isPersistent: false);
 
         return Ok(new AuthResponse(
             Message: "Login successful",
