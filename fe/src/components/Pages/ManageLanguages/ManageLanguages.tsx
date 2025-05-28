@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import styles from "./ManageLanguages.module.css";
 import pageStyles from "../Pages.module.css";
 import CreateLanguage from "../../Dialogs/CreateLanguage/CreateLanguage";
 import DeleteConfirmation from "../../Dialogs/DeleteConfirmation/DeleteConfirmation";
 import { languageService, Language } from "../../../services/languageService";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import LanguageItem from "./LanguageItem";
 
 const ManageLanguages: React.FC = () => {
   const {
@@ -80,9 +80,6 @@ const ManageLanguages: React.FC = () => {
     setCreateError("");
   };
 
-  const truncateName = (name: string): string => {
-    return name.length > 20 ? `${name.substring(0, 20)}...` : name;
-  };
   return (
     <div className={pageStyles.container}>
       {(createError || deleteError) && (
@@ -99,37 +96,14 @@ const ManageLanguages: React.FC = () => {
             <div className={pageStyles.noContent}>No languages found</div>
           ) : (
             languages.map((language) => (
-              <div key={language.id} className={pageStyles.item}>
-                <label className={styles.radioLabel}>
-                  <input
-                    type="radio"
-                    name="language"
-                    checked={currentLanguage?.id === language.id}
-                    onChange={() => setCurrentLanguage(language)}
-                    className={styles.radioInput}
-                  />
-                  <span className={styles.radioControl}></span>
-                  <span className={styles.languageName} title={language.name}>
-                    {truncateName(language.name)}
-                  </span>
-                </label>
-                <div className={pageStyles.actionButtons}>
-                  <button
-                    className={pageStyles.editButton}
-                    onClick={() => handleEdit(language)}
-                    title="Edit language"
-                  >
-                    <i className="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    className={pageStyles.deleteButton}
-                    onClick={() => setDeletingLanguage(language)}
-                    title="Delete language"
-                  >
-                    <i className="bi bi-x-lg"></i>
-                  </button>
-                </div>
-              </div>
+              <LanguageItem
+                key={language.id}
+                language={language}
+                currentLanguageId={currentLanguage?.id}
+                onSelect={setCurrentLanguage}
+                onEdit={handleEdit}
+                onDelete={setDeletingLanguage}
+              />
             ))
           )}
           {languages.length < totalCount && (
