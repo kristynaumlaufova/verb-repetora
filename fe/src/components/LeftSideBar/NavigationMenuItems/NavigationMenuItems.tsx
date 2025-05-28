@@ -20,6 +20,12 @@ const menuItems: MenuItem[] = [
     label: "Vocabulary",
     path: "/vocabulary",
   },
+  {
+    id: "wordTypes",
+    icon: "bi bi-tags",
+    label: "Word Types",
+    path: "/word-types",
+  },
 ];
 
 interface NavigationMenuItemsProps {

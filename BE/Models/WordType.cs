@@ -11,17 +11,12 @@ public class WordType
 
     [Required]
     public int LangId { get; set; }
-
     [Required]
     public string Name { get; set; } = string.Empty;
 
-    public string? Field1 { get; set; }
-    public string? Field2 { get; set; }
-    public string? Field3 { get; set; }
-    public string? Field4 { get; set; }
-    public string? Field5 { get; set; }
+    public string Fields { get; set; } = string.Empty;
 
     // Navigation properties
     public Language Language { get; set; } = null!;
-    public ICollection<Word> Words { get; set; } = new List<Word>();
+    public ICollection<Word> Words { get; set; } = [];
 }

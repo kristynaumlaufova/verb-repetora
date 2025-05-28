@@ -1,15 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 using BE.Data;
 using BE.Models;
+using BE.Models.Dto;
 
 namespace BE.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class WordTypeController(ApplicationDbContext context) : ControllerBase
+[Authorize]
+public class WordTypeController(ApplicationDbContext context, UserManager<AppUser> userManager) : ControllerBase
 {
+    private static WordTypeDto ToDto(WordType wordType) => new(
+        wordType.Id,
+        wordType.UserId,
+        wordType.LangId,
+        wordType.Name,
+        wordType.Fields
+    );
+
     /// <summary>
     /// Retrieves all word types from the database.
     /// </summary>
@@ -18,9 +30,26 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
     /// GET /api/WordType
     /// </example>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<WordType>>> GetWordTypes()
+    public async Task<ActionResult<PaginatedResponse<WordTypeDto>>> GetWordTypes([FromQuery] int langId)
     {
-        return await context.WordTypes.ToListAsync();
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var query = context.WordTypes.Where(wt => wt.LangId == langId && wt.UserId == user.Id);
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Select(wt => ToDto(wt))
+            .ToListAsync();
+
+        return Ok(new PaginatedResponse<WordTypeDto>(
+            items,
+            totalCount,
+            1,
+            totalCount
+        ));
     }
 
     /// <summary>
@@ -32,16 +61,23 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
     /// GET /api/WordType/5
     /// </example>
     [HttpGet("{id}")]
-    public async Task<ActionResult<WordType>> GetWordType(int id)
+    public async Task<ActionResult<WordTypeDto>> GetWordType(int id)
     {
-        var wordType = await context.WordTypes.FindAsync(id);
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var wordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
 
         if (wordType == null)
         {
             return NotFound();
         }
 
-        return wordType;
+        return Ok(ToDto(wordType));
     }
 
     /// <summary>
@@ -57,12 +93,44 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
     /// }
     /// </example>
     [HttpPost]
-    public async Task<ActionResult<WordType>> CreateWordType(WordType wordType)
+    public async Task<ActionResult<WordTypeDto>> CreateWordType(CreateWordTypeRequest request)
     {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        // Check if language exists and belongs to user
+        var language = await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == request.LangId && l.UserId == user.Id);
+        if (language == null)
+        {
+            return BadRequest("Language not found");
+        }
+
+        // Check for name collision within the language
+        var existingWordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.LangId == request.LangId &&
+                                     wt.Name == request.Name &&
+                                     wt.UserId == user.Id);
+        if (existingWordType != null)
+        {
+            return BadRequest("A word type with this name already exists in this language");
+        }
+
+        var wordType = new WordType
+        {
+            UserId = user.Id,
+            LangId = request.LangId,
+            Name = request.Name,
+            Fields = request.Fields
+        };
+
         context.WordTypes.Add(wordType);
         await context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetWordType), new { id = wordType.Id }, wordType);
+        return Ok(ToDto(wordType));
     }
 
     /// <summary>
@@ -79,18 +147,45 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
     /// }
     /// </example>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateWordType(int id, WordType wordType)
+    public async Task<ActionResult<WordTypeDto>> UpdateWordType(int id, UpdateWordTypeRequest request)
     {
-        if (id != wordType.Id)
+        if (id != request.Id)
         {
             return BadRequest();
         }
 
-        context.Entry(wordType).State = EntityState.Modified;
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var wordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
+
+        if (wordType == null)
+        {
+            return NotFound();
+        }
+
+        // Check for name collision with other word types
+        var existingWordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id != id &&
+                                     wt.LangId == wordType.LangId &&
+                                     wt.Name == request.Name &&
+                                     wt.UserId == user.Id);
+        if (existingWordType != null)
+        {
+            return BadRequest("A word type with this name already exists in this language");
+        }
+
+        wordType.Name = request.Name;
+        wordType.Fields = request.Fields;
 
         try
         {
             await context.SaveChangesAsync();
+            return Ok(ToDto(wordType));
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -98,13 +193,8 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
             {
                 return NotFound();
             }
-            else
-            {
-                throw;
-            }
+            throw;
         }
-
-        return NoContent();
     }
 
     /// <summary>
@@ -117,7 +207,15 @@ public class WordTypeController(ApplicationDbContext context) : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWordType(int id)
     {
-        var wordType = await context.WordTypes.FindAsync(id);
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var wordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
+
         if (wordType == null)
         {
             return NotFound();

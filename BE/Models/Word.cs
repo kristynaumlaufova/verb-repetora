@@ -15,5 +15,5 @@ public class Word
     // Navigation properties
     public WordType WordType { get; set; } = null!;
     public Language Language { get; set; } = null!;
-    public ICollection<WordInLesson> WordInLessons { get; set; } = new List<WordInLesson>();
+    public ICollection<WordInLesson> WordInLessons { get; set; } = [];
 }

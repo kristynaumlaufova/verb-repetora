@@ -11,7 +11,8 @@ interface CreateLanguageProps {
 
 const CreateLanguage: React.FC<CreateLanguageProps> = ({
   isOpen,
-  onClose,  onCreateLanguage,
+  onClose,
+  onCreateLanguage,
   initialValue,
 }) => {
   const [languageName, setLanguageName] = useState("");
@@ -39,8 +40,9 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
 
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modal} ref={modalRef}>        <h2 className={styles.title}>
-          {initialValue ? "Edit language" : "Create new language"}
+      <div className={styles.modal} ref={modalRef}>
+        <h2 className={styles.title}>
+          {initialValue ? "Rename language" : "Create new language"}
         </h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
