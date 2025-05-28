@@ -1,18 +1,13 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./LangMenu.module.css";
 import useClickOutside from "../../../hooks/useClickOutside";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface LangMenuProps {
   currentLanguage: string;
   onLanguageChange: (language: string) => void;
 }
-
-const languages = [
-  { code: "ENGLISH", label: "English" },
-  { code: "POLISH", label: "Polish" },
-  { code: "GERMAN", label: "German" },
-];
 
 const LangMenu: React.FC<LangMenuProps> = ({
   currentLanguage,
@@ -21,6 +16,7 @@ const LangMenu: React.FC<LangMenuProps> = ({
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { languages } = useLanguage();
 
   useClickOutside(langMenuRef, () => setIsLangMenuOpen(false));
 
@@ -33,6 +29,9 @@ const LangMenu: React.FC<LangMenuProps> = ({
     navigate("/manage-languages");
   }, [navigate]);
 
+  // Memoize the first 5 languages
+  const displayLanguages = useMemo(() => languages.slice(0, 5), [languages]);
+
   return (
     <div className={styles.languageSelector} ref={langMenuRef}>
       <button className={styles.langButton} onClick={handleLanguageClick}>
@@ -40,19 +39,19 @@ const LangMenu: React.FC<LangMenuProps> = ({
       </button>
       {isLangMenuOpen && (
         <div className={styles.dropdown}>
-          {languages.map((lang) => (
+          {displayLanguages.map((lang) => (
             <button
-              key={lang.code}
+              key={lang.id}
               className={`${styles.dropdownItem} ${
-                currentLanguage === lang.code ? styles.selected : ""
+                currentLanguage === lang.name ? styles.selected : ""
               }`}
               onClick={() => {
-                onLanguageChange(lang.code);
+                onLanguageChange(lang.name);
                 setIsLangMenuOpen(false);
               }}
             >
-              <span>{lang.label}</span>
-              {currentLanguage === lang.code && <i className="bi bi-check2" />}
+              <span>{lang.name}</span>
+              {currentLanguage === lang.name && <i className="bi bi-check2" />}
             </button>
           ))}
           <div className={styles.divider}></div>

@@ -27,10 +27,10 @@
   overflow-y: auto;
   padding-right: 0.5rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: column;  
   gap: 0.5rem;
   height: calc(100% - 8rem);
-  scrollbar-width: thin;  scrollbar-color: var(--main-light) transparent;
+  scrollbar-width: thin;  scrollbar-color: var(--main) transparent;
 }
 
 /* Scrollbar styling */
@@ -43,7 +43,7 @@
 }
 
 .languagesWrapper::-webkit-scrollbar-thumb {
-  background: var(--main-light);
+  background: var(--main);
 }
 
 .languagesWrapper::-webkit-scrollbar-thumb:hover {
@@ -92,7 +92,7 @@
 }
 
 .radioInput:checked + .radioControl {
-  border-color: var(--main-light);
+  border-color: var(--main);
 }
 
 .radioInput:checked + .radioControl::after {
@@ -102,7 +102,7 @@
   left: 3px;
   width: 8px;
   height: 8px;
-  background-color: var(--main-light);
+  background-color: var(--main);
   border-radius: 50%;
 }
 
@@ -160,6 +160,37 @@
   display: flex;
   justify-content: flex-start;
   width: 375px;
+}
+
+.loading, .noLanguages {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.loadMoreButton {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: var(--background-light);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background-color: var(--background-lighter);
+}
+
+.loadMoreButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 @media (max-width: 768px) {

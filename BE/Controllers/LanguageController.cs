@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 using BE.Data;
 using BE.Models;
+using BE.Models.Dto;
 
 namespace BE.Controllers;
 
@@ -23,9 +24,49 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     /// GET /api/Language
     /// </example>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Language>>> GetLanguages()
+    public async Task<ActionResult<PaginatedResponse<Language>>> GetLanguages([FromQuery] LanguageQueryParameters parameters)
     {
-        return await context.Languages.ToListAsync();
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var userId = int.Parse(userIdClaim.Value);
+        var query = context.Languages
+            .Where(l => l.UserId == userId);
+
+        // Add search
+        if (!string.IsNullOrEmpty(parameters.SearchTerm))
+        {
+            query = query.Where(l => l.Name.Contains(parameters.SearchTerm));
+        }
+
+        // Add sorting
+        query = parameters.SortBy?.ToLower() switch
+        {
+            "name" => parameters.SortDescending
+                ? query.OrderByDescending(l => l.Name)
+                : query.OrderBy(l => l.Name),
+            "createdat" => parameters.SortDescending
+                ? query.OrderByDescending(l => l.CreatedAt)
+                : query.OrderBy(l => l.CreatedAt),
+            _ => query.OrderByDescending(l => l.UpdatedAt) // default sort
+        };
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .ToListAsync();
+
+        return Ok(new PaginatedResponse<Language>(
+            items,
+            totalCount,
+            parameters.PageNumber,
+            parameters.PageSize
+        ));
     }
 
     /// <summary>
@@ -39,7 +80,9 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Language>> GetLanguage(int id)
     {
-        var language = await context.Languages.FindAsync(id);
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+        var language = await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
 
         if (language == null)
         {
@@ -65,13 +108,21 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     {
         try
         {
+            var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+
+            // Check if user already has a language with this name
             var existingLanguage = await context.Languages
-                .FirstOrDefaultAsync(l => l.UserId == language.UserId && l.Name == language.Name);
+                .FirstOrDefaultAsync(l => l.UserId == userId && l.Name == language.Name);
 
             if (existingLanguage != null)
             {
                 return BadRequest("A language with this name already exists");
             }
+
+            // Set additional properties
+            language.UserId = userId;
+            language.CreatedAt = DateTime.UtcNow;
+            language.UpdatedAt = DateTime.UtcNow;
 
             context.Languages.Add(language);
             await context.SaveChangesAsync();
@@ -99,16 +150,36 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateLanguage(int id, Language language)
     {
-        if (id != language.Id)
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+
+        // Check if the language exists and belongs to the user
+        var existingLanguage = await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+
+        if (existingLanguage == null)
         {
-            return BadRequest();
+            return NotFound();
         }
 
-        context.Entry(language).State = EntityState.Modified;
+        // Check if the new name conflicts with another language
+        var nameConflict = await context.Languages
+            .FirstOrDefaultAsync(l =>
+                l.UserId == userId &&
+                l.Name == language.Name &&
+                l.Id != id);
+
+        if (nameConflict != null)
+        {
+            return BadRequest("A language with this name already exists");
+        }
+
+        existingLanguage.Name = language.Name;
+        existingLanguage.UpdatedAt = DateTime.UtcNow;
 
         try
         {
             await context.SaveChangesAsync();
+            return Ok(existingLanguage);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -116,13 +187,8 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
             {
                 return NotFound();
             }
-            else
-            {
-                throw;
-            }
+            throw;
         }
-
-        return NoContent();
     }
 
     /// <summary>
@@ -131,11 +197,14 @@ public class LanguageController(ApplicationDbContext context) : ControllerBase
     /// <param name="id">The ID of the language to delete.</param>
     /// <example>
     /// DELETE /api/Language/5
-    /// </example>
-    [HttpDelete("{id}")]
+    /// </example>    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteLanguage(int id)
     {
-        var language = await context.Languages.FindAsync(id);
+        var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value!);
+
+        var language = await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == id && l.UserId == userId);
+
         if (language == null)
         {
             return NotFound();

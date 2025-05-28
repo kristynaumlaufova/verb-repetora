@@ -8,10 +8,10 @@
 }
 
 .loginCard {
-    background: white;
+    background: var(--bg-primary);
     padding: 2rem;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow);
     width: 100%;
     max-width: 400px;
 }
@@ -63,7 +63,7 @@ h2 {
 .inputGroup input:focus {
     outline: none;
     border-color: var(--accent-1);
-    box-shadow: 0 0 0 2px rgba(46, 150, 255, 0.1);
+    box-shadow: 0 0 0 2px var(--box-shadow);
 }
 
 .options {
@@ -76,7 +76,7 @@ h2 {
 .submitButton {
     padding: 0.75rem;
     background-color: var(--accent-1);
-    color: white;
+    color: var(--bg-primary);
     border: none;
     border-radius: 6px;
     font-weight: 500;
@@ -92,11 +92,10 @@ h2 {
     text-align: center;
     margin-top: 1.5rem;
     font-size: 0.875rem;
-    color: #4B5563;
 }
 
 .signup a {
-    color: var(--main-light);
+    color: var(--main);
     text-decoration: none;
     font-weight: 500;
 }

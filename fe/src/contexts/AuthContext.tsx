@@ -31,6 +31,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserDto | null>(authService.getUser());
   const [isAuthenticated, setIsAuthenticated] = useState(!!user);
 
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = authService.getUser();
+        if (currentUser && !isAuthenticated) {
+          setUser(currentUser);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, [isAuthenticated]);
+
   useEffect(() => {
     const handleAuthChange = () => {
       const currentUser = authService.getUser();

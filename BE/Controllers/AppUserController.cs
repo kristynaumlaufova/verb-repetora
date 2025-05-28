@@ -115,7 +115,7 @@ public class AppUserController(
             return Unauthorized("Invalid username or password");
         }
 
-        var result = await signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+        var result = await signInManager.PasswordSignInAsync(user, request.Password, isPersistent: true, lockoutOnFailure: false);
         if (!result.Succeeded)
         {
             return Unauthorized("Invalid username or password");

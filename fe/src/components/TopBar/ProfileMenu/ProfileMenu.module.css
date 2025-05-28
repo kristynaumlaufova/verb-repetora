@@ -5,8 +5,8 @@
 .avatar {
   width: 36px;
   height: 36px;
-  background-color: #f97316;
-  color: white;
+  background-color: var(--accent-1);
+  color: var(--bg-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -17,13 +17,18 @@
   font-size: 1rem;
 }
 
+.avatar:hover {
+  cursor: pointer;
+  background-color: var(--accent-1-dark);
+}
+
 .dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  background-color: white;
+  background-color: var(--bg-primary);
   border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px var(--shadow), 0 2px 4px -1px var(--shadow);
   min-width: 200px;
   z-index: 1000;
 }

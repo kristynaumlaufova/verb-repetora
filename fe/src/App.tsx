@@ -7,9 +7,12 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
-import MainContent from "./components/MainContent/MainContent";
+import Dashboard from "./components/Pages/Dashboard";
+import Lessons from "./components/Pages/Lessons";
+import Vocabulary from "./components/Pages/Vocabulary";
 import ManageLanguages from "./components/ManageLanguages/ManageLanguages";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
@@ -37,18 +40,11 @@ const AppContent: React.FC = () => {
           onLanguageChange={setCurrentLanguage}
           userName={user?.username || ""}
           onCreateNewLanguage={handleCreateNewLanguage}
-        />
-        <Routes>
+        />        <Routes>
           <Route path="/manage-languages" element={<ManageLanguages />} />
-          <Route
-            path="/lessons"
-            element={<MainContent currentPage="lessons" />}
-          />
-          <Route
-            path="/vocabulary"
-            element={<MainContent currentPage="vocabulary" />}
-          />
-          <Route path="/" element={<MainContent currentPage="dashboard" />} />
+          <Route path="/lessons" element={<Lessons />} />
+          <Route path="/vocabulary" element={<Vocabulary />} />
+          <Route path="/" element={<Dashboard />} />
         </Routes>
       </div>
     </div>
@@ -62,7 +58,14 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/*" element={<AppContent />} />
+          <Route
+            path="/*"
+            element={
+              <LanguageProvider>
+                <AppContent />
+              </LanguageProvider>
+            }
+          />
         </Routes>
       </AuthProvider>
     </Router>

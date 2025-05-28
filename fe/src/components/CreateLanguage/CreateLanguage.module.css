@@ -9,10 +9,10 @@
   flex-direction: column;
   gap: 1.5rem;
   margin-top: 2rem;
-  background-color: white;
+  background-color: var(--bg-primary);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow);
 }
 
 .formGroup {
@@ -35,8 +35,7 @@
 
 .formGroup input:focus {
   outline: none;
-  border-color: var(--main-light);
-  box-shadow: 0 0 0 2px rgba(46, 150, 255, 0.1);
+  border-color: var(--accent-1);
 }
 
 .buttonGroup {
@@ -66,7 +65,7 @@
 }
 
 .submitButton {
-  background-color: var(--main-light);
+  background-color: var(--main);
   border: none;
   color: white;
 }
@@ -156,7 +155,7 @@
 }
 
 .createButton {
-  background: var(--main-light);
+  background: var(--main);
   color: white;
 }
 

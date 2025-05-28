@@ -21,6 +21,13 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<LanguageController>();
 
 // Set authentication policy
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+});
+
 builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 {
     options.Password.RequireDigit = true;
@@ -37,6 +44,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.Cookie.Name = ".AspNetCore.Identity.Application";
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromHours(4);
     options.SlidingExpiration = true;
@@ -66,7 +74,20 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Configrue swagger
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("Allow");
+    });
+});
+
+// Configure swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -113,11 +134,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseDefaultFiles(defaultFilesOptions);
-app.UseStaticFiles(staticFileOptions);
-
+app.UseRouting();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseDefaultFiles(defaultFilesOptions);
+app.UseStaticFiles(staticFileOptions);
 
 app.MapControllers();
 

@@ -1,6 +1,6 @@
 .topBar {
   height: 60px;
-  background-color: white;
+  background-color: var(--bg-primary);
   display: flex;
   justify-content: flex-end;
   align-items: center;
