@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./CreateLanguage.module.css";
-import useClickOutside from "../../hooks/useClickOutside";
+import useClickOutside from "../../../hooks/useClickOutside";
 
 interface CreateLanguageProps {
   isOpen: boolean;

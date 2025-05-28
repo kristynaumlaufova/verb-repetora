@@ -11,6 +11,7 @@ public class WordType
 
     [Required]
     public int LangId { get; set; }
+
     [Required]
     public string Name { get; set; } = string.Empty;
 

@@ -24,16 +24,15 @@ export interface WordTypeQueryParameters {
   langId: number;
 }
 
-export const wordTypeService = {
-  getWordTypes: async (params: WordTypeQueryParameters): Promise<PaginatedResponse<WordType>> => {
+export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryParameters): Promise<PaginatedResponse<WordType>> => {
     const response = await apiClient.get('/WordType', { 
       params: {
+        langId: params.langId,
         pageNumber: params.pageNumber || 1,
         pageSize: params.pageSize || 10,
         searchTerm: params.searchTerm,
         sortBy: params.sortBy,
-        sortDescending: params.sortDescending,
-        langId: params.langId
+        sortDescending: params.sortDescending
       }
     });
     return response.data;
@@ -44,20 +43,20 @@ export const wordTypeService = {
     return response.data;
   },
 
-  createWordType: async (name: string, fields: string[], langId: number): Promise<WordType> => {
+  createWordType: async (name: string, fields: string, langId: number): Promise<WordType> => {
     const response = await apiClient.post('/WordType', {
       name,
       langId,
-      fields: fields.join(';')
+      fields
     });
     return response.data;
   },
 
-  updateWordType: async (id: number, name: string, fields: string[]): Promise<WordType> => {
+  updateWordType: async (id: number, name: string, fields: string): Promise<WordType> => {
     const response = await apiClient.put(`/WordType/${id}`, {
       id,
       name,
-      fields: fields.join(';')
+      fields
     });
     return response.data;
   },

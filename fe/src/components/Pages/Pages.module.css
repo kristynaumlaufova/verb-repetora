@@ -3,3 +3,224 @@
   padding: 20px;
   overflow-y: auto;
 }
+
+/* LAYOUT */
+.container {
+  padding: 2rem;
+  padding-left: 3rem;
+  position: relative;
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
+.wrapper {
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: calc(100% - 8rem);
+  scrollbar-width: thin;
+  scrollbar-color: var(--main) transparent;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem;
+    align-items: center;
+  }
+
+  .title {
+    width: 100%;
+    max-width: 375px;
+  }
+
+  .list {
+    width: 100%;
+    max-width: 375px;
+    padding: 0 1rem;
+  }
+
+  .wrapper {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+/* TOPOGRAPHY */
+.title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 2rem;
+}
+
+/* BUTTONS */
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.addButton {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--main);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.addButton:hover {
+  background-color: var(--main-dark);
+}
+
+.editButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  color: var(--accent-1);
+}
+
+.deleteButton {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+}
+
+.deleteButton:hover {
+  color: var(--danger-dark);
+}
+
+.deleteButton:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.deleteButton:disabled:hover {
+  background: none;
+}
+
+.loadMoreButton {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: var(--background-light);
+  border: 1px solid var(--text-secondary);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background-color: var(--background-lighter);
+}
+
+.loadMoreButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* NOTIFICATIONS */
+.errorNotification {
+  color: var(--danger-dark);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: var(--danger-light);
+  border-radius: 4px;
+  text-align: left;
+  animation: fadeOut 5s forwards;
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  min-width: 300px;
+  max-width: 90%;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* LOADING */
+.loading, .noContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* SCROLLBAR */
+.wrapper::-webkit-scrollbar {
+  width: 2px;
+}
+
+.wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wrapper::-webkit-scrollbar-thumb {
+  background: var(--main);
+}
+
+.wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-1);
+}
+
+.wrapper:hover {
+  scrollbar-color: var(--accent-1) transparent;
+}

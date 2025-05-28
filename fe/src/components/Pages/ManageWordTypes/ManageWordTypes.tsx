@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styles from "./ManageWordTypes.module.css";
-import DeleteConfirmation from "../Dialogs/DeleteConfirmation/DeleteConfirmation";
-import CreateWordType from "../Dialogs/CreateWordType/CreateWordType";
-import { WordType } from "../../services/wordTypeService";
-import { useWordTypeManager } from "../../hooks/useWordTypeManager";
-import { useLanguage } from "../../contexts/LanguageContext";
+import pageStyles from "../Pages.module.css";
+import DeleteConfirmation from "../../Dialogs/DeleteConfirmation/DeleteConfirmation";
+import CreateWordType from "../../Dialogs/CreateWordType/CreateWordType";
+import { WordType } from "../../../services/wordTypeService";
+import { useWordTypeManager } from "../../../hooks/useWordTypeManager";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 const ManageWordTypes: React.FC = () => {
   const { currentLanguage } = useLanguage();
@@ -65,18 +66,18 @@ const ManageWordTypes: React.FC = () => {
   }, [refreshWordTypes]);
 
   return (
-    <div className={styles.container}>
-      {error && <div className={styles.errorNotification}>{error}</div>}
-      <h1 className={styles.title}>Manage word types</h1>
-      <div className={styles.wordTypesList}>
-        <div className={styles.wordTypesWrapper}>
+    <div className={pageStyles.container}>
+      {error && <div className={pageStyles.errorNotification}>{error}</div>}
+      <h1 className={pageStyles.title}>Manage word types</h1>
+      <div className={pageStyles.list}>
+        <div className={pageStyles.wrapper}>
           {isLoading ? (
-            <div className={styles.loading}>Loading...</div>
+            <div className={pageStyles.loading}>Loading...</div>
           ) : wordTypes.length === 0 ? (
-            <div className={styles.noWordTypes}>No word types found</div>
+            <div className={pageStyles.noContent}>No word types found</div>
           ) : (
             wordTypes.map((wordType) => (
-              <div key={wordType.id} className={styles.wordTypeItem}>
+              <div key={wordType.id} className={pageStyles.item}>
                 <div className={styles.nameSection}>
                   <span className={styles.wordTypeName} title={wordType.name}>
                     {wordType.name}
@@ -87,16 +88,16 @@ const ManageWordTypes: React.FC = () => {
                     {wordType.fields?.split(";").join(", ") || ""}
                   </span>
                 </div>
-                <div className={styles.actionButtons}>
+                <div className={pageStyles.actionButtons}>
                   <button
-                    className={styles.editButton}
+                    className={pageStyles.editButton}
                     onClick={() => handleEdit(wordType)}
                     title="Edit word type"
                   >
                     <i className="bi bi-pencil"></i>
                   </button>
                   <button
-                    className={styles.deleteButton}
+                    className={pageStyles.deleteButton}
                     onClick={() => setDeletingWordType(wordType)}
                     title="Delete word type"
                   >
@@ -108,7 +109,7 @@ const ManageWordTypes: React.FC = () => {
           )}
           {wordTypes.length < totalCount && (
             <button
-              className={styles.loadMoreButton}
+              className={pageStyles.loadMoreButton}
               onClick={loadMore}
               disabled={isLoading}
             >
@@ -118,7 +119,7 @@ const ManageWordTypes: React.FC = () => {
         </div>
 
         <button
-          className={styles.addButton}
+          className={pageStyles.addButton}
           onClick={() => setIsCreateModalOpen(true)}
           title="Add new word type"
         >

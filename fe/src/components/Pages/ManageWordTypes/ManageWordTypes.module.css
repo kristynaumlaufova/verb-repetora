@@ -1,0 +1,17 @@
+.nameSection {
+  flex: 0 0 200px;
+}
+
+.wordTypeName {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.fieldsSection {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -20,17 +20,16 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         wordType.LangId,
         wordType.Name,
         wordType.Fields
-    );
-
-    /// <summary>
-    /// Retrieves all word types from the database.
-    /// </summary>
-    /// <returns>A list of all word types.</returns>
-    /// <example>
-    /// GET /api/WordType
-    /// </example>
+    );    /// <summary>
+          /// Retrieves word types with pagination, sorting and filtering support.
+          /// </summary>
+          /// <param name="parameters">Query parameters including pagination, sorting and search options.</param>
+          /// <returns>A paginated list of word types.</returns>
+          /// <example>
+          /// GET /api/WordType?langId=1&pageNumber=1&pageSize=10&searchTerm=noun&sortBy=name&sortDescending=false
+          /// </example>
     [HttpGet]
-    public async Task<ActionResult<PaginatedResponse<WordTypeDto>>> GetWordTypes([FromQuery] int langId)
+    public async Task<ActionResult<PaginatedResponse<WordTypeDto>>> GetWordTypes([FromQuery] WordTypeQueryParameters parameters)
     {
         var user = await userManager.GetUserAsync(User);
         if (user == null)
@@ -38,17 +37,37 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var query = context.WordTypes.Where(wt => wt.LangId == langId && wt.UserId == user.Id);
+        var query = context.WordTypes.Where(wt => wt.LangId == parameters.LangId && wt.UserId == user.Id);
+
+        // Add search
+        if (!string.IsNullOrEmpty(parameters.SearchTerm))
+        {
+            query = query.Where(wt => wt.Name.Contains(parameters.SearchTerm));
+        }
+
+        // Add sorting
+        query = parameters.SortBy?.ToLower() switch
+        {
+            "name" => parameters.SortDescending
+                ? query.OrderByDescending(wt => wt.Name)
+                : query.OrderBy(wt => wt.Name),
+            _ => query.OrderBy(wt => wt.Name) // Default sort by name
+        };
+
         var totalCount = await query.CountAsync();
+
+        // Add pagination
         var items = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
             .Select(wt => ToDto(wt))
             .ToListAsync();
 
         return Ok(new PaginatedResponse<WordTypeDto>(
             items,
             totalCount,
-            1,
-            totalCount
+            parameters.PageNumber,
+            parameters.PageSize
         ));
     }
 
@@ -101,9 +120,8 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        // Check if language exists and belongs to user
         var language = await context.Languages
-            .FirstOrDefaultAsync(l => l.Id == request.LangId && l.UserId == user.Id);
+            .FirstOrDefaultAsync(l => l.Id == request.LangId);
         if (language == null)
         {
             return BadRequest("Language not found");
@@ -112,8 +130,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         // Check for name collision within the language
         var existingWordType = await context.WordTypes
             .FirstOrDefaultAsync(wt => wt.LangId == request.LangId &&
-                                     wt.Name == request.Name &&
-                                     wt.UserId == user.Id);
+                                     wt.Name == request.Name);
         if (existingWordType != null)
         {
             return BadRequest("A word type with this name already exists in this language");

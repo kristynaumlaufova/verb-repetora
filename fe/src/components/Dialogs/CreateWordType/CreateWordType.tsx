@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./CreateWordType.module.css";
-import useClickOutside from "../../hooks/useClickOutside";
-import { WordType } from "../../services/wordTypeService";
+import useClickOutside from "../../../hooks/useClickOutside";
+import { WordType } from "../../../services/wordTypeService";
 
 interface CreateWordTypeProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateWordType: (name: string, fields: string[]) => void;
+  onCreateWordType: (name: string, fields: string) => void;
   initialWordType?: WordType | null;
 }
 
@@ -37,12 +37,11 @@ const CreateWordType: React.FC<CreateWordTypeProps> = ({
       inputRef.current?.focus();
     }
   }, [isOpen, initialWordType]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (wordTypeName.trim()) {
-      const nonEmptyFields = fields.filter((field) => field.trim() !== "");
-      onCreateWordType(wordTypeName.trim(), nonEmptyFields);
+      const fieldsString = fields.filter((field) => field.trim()).join(";");
+      onCreateWordType(wordTypeName.trim(), fieldsString);
       onClose();
     }
   };

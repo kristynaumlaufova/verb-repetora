@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import styles from "./ManageLanguages.module.css";
-import CreateLanguage from "../Dialogs/CreateLanguage/CreateLanguage";
-import DeleteConfirmation from "../Dialogs/DeleteConfirmation/DeleteConfirmation";
-import { languageService, Language } from "../../services/languageService";
-import { useLanguage } from "../../contexts/LanguageContext";
+import pageStyles from "../Pages.module.css";
+import CreateLanguage from "../../Dialogs/CreateLanguage/CreateLanguage";
+import DeleteConfirmation from "../../Dialogs/DeleteConfirmation/DeleteConfirmation";
+import { languageService, Language } from "../../../services/languageService";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 const ManageLanguages: React.FC = () => {
   const {
@@ -83,22 +84,22 @@ const ManageLanguages: React.FC = () => {
     return name.length > 20 ? `${name.substring(0, 20)}...` : name;
   };
   return (
-    <div className={styles.container}>
+    <div className={pageStyles.container}>
       {(createError || deleteError) && (
-        <div className={styles.errorNotification}>
+        <div className={pageStyles.errorNotification}>
           {createError || deleteError}
         </div>
       )}
-      <h1 className={styles.title}>Manage languages</h1>
-      <div className={styles.languagesList}>
-        <div className={styles.languagesWrapper}>
+      <h1 className={pageStyles.title}>Manage languages</h1>
+      <div className={pageStyles.list}>
+        <div className={pageStyles.wrapper}>
           {isLoading && languages.length === 0 ? (
-            <div className={styles.loading}>Loading...</div>
+            <div className={pageStyles.loading}>Loading...</div>
           ) : languages.length === 0 ? (
-            <div className={styles.noLanguages}>No languages found</div>
+            <div className={pageStyles.noContent}>No languages found</div>
           ) : (
             languages.map((language) => (
-              <div key={language.id} className={styles.languageItem}>
+              <div key={language.id} className={pageStyles.item}>
                 <label className={styles.radioLabel}>
                   <input
                     type="radio"
@@ -112,16 +113,16 @@ const ManageLanguages: React.FC = () => {
                     {truncateName(language.name)}
                   </span>
                 </label>
-                <div className={styles.actionButtons}>
+                <div className={pageStyles.actionButtons}>
                   <button
-                    className={styles.editButton}
+                    className={pageStyles.editButton}
                     onClick={() => handleEdit(language)}
                     title="Edit language"
                   >
                     <i className="bi bi-pencil"></i>
                   </button>
                   <button
-                    className={styles.deleteButton}
+                    className={pageStyles.deleteButton}
                     onClick={() => setDeletingLanguage(language)}
                     title="Delete language"
                   >
@@ -133,7 +134,7 @@ const ManageLanguages: React.FC = () => {
           )}
           {languages.length < totalCount && (
             <button
-              className={styles.loadMoreButton}
+              className={pageStyles.loadMoreButton}
               onClick={loadMore}
               disabled={isLoading}
             >
@@ -143,7 +144,7 @@ const ManageLanguages: React.FC = () => {
         </div>
 
         <button
-          className={styles.addButton}
+          className={pageStyles.addButton}
           onClick={() => setIsCreateModalOpen(true)}
         >
           <i className="bi bi-plus"></i>

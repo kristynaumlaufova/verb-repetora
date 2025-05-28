@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import styles from "./DeleteConfirmation.module.css";
-import useClickOutside from "../../hooks/useClickOutside";
+import useClickOutside from "../../../hooks/useClickOutside";
 
 interface DeleteConfirmationProps {
   isOpen: boolean;

@@ -38,13 +38,17 @@
   margin-bottom: 0.5rem;
 }
 
-.inputGroup input {
+.inputGroup input, .fieldRow input {
   width: 100%;
   padding: 0.5rem;
   font-size: 1rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
   outline: none;
+}
+
+.inputGroup input:focus, .fieldRow input:focus {
+  border-color: var(--accent-1);
 }
 
 .fieldsContainer {
