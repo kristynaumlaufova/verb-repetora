@@ -20,14 +20,16 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         wordType.LangId,
         wordType.Name,
         wordType.Fields
-    );    /// <summary>
-          /// Retrieves word types with pagination, sorting and filtering support.
-          /// </summary>
-          /// <param name="parameters">Query parameters including pagination, sorting and search options.</param>
-          /// <returns>A paginated list of word types.</returns>
-          /// <example>
-          /// GET /api/WordType?langId=1&pageNumber=1&pageSize=10&searchTerm=noun&sortBy=name&sortDescending=false
-          /// </example>
+    );
+
+    /// <summary>
+    /// Retrieves word types with pagination, sorting and filtering support.
+    /// </summary>
+    /// <param name="parameters">Query parameters including pagination, sorting and search options.</param>
+    /// <returns>A paginated list of word types.</returns>
+    /// <example>
+    /// GET /api/WordType?langId=1&pageNumber=1&pageSize=10&searchTerm=noun&sortBy=name&sortDescending=false
+    /// </example>
     [HttpGet]
     public async Task<ActionResult<PaginatedResponse<WordTypeDto>>> GetWordTypes([FromQuery] WordTypeQueryParameters parameters)
     {
@@ -51,7 +53,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             "name" => parameters.SortDescending
                 ? query.OrderByDescending(wt => wt.Name)
                 : query.OrderBy(wt => wt.Name),
-            _ => query.OrderBy(wt => wt.Name) // Default sort by name
+            _ => query.OrderBy(wt => wt.Name)
         };
 
         var totalCount = await query.CountAsync();
@@ -88,8 +90,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var wordType = await context.WordTypes
-            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
+        var wordType = await GetWordTypeOfUser(id, user.Id);
 
         if (wordType == null)
         {
@@ -120,18 +121,12 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var language = await context.Languages
-            .FirstOrDefaultAsync(l => l.Id == request.LangId);
-        if (language == null)
+        if (await LanguageExists(request.LangId))
         {
             return BadRequest("Language not found");
         }
 
-        // Check for name collision within the language
-        var existingWordType = await context.WordTypes
-            .FirstOrDefaultAsync(wt => wt.LangId == request.LangId &&
-                                     wt.Name == request.Name);
-        if (existingWordType != null)
+        if (await IsNameColision(request.LangId, request.Name))
         {
             return BadRequest("A word type with this name already exists in this language");
         }
@@ -177,21 +172,14 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var wordType = await context.WordTypes
-            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
+        var wordType = await GetWordTypeOfUser(id, user.Id);
 
         if (wordType == null)
         {
             return NotFound();
         }
 
-        // Check for name collision with other word types
-        var existingWordType = await context.WordTypes
-            .FirstOrDefaultAsync(wt => wt.Id != id &&
-                                     wt.LangId == wordType.LangId &&
-                                     wt.Name == request.Name &&
-                                     wt.UserId == user.Id);
-        if (existingWordType != null)
+        if (await IsNameColision(wordType.LangId, request.Name))
         {
             return BadRequest("A word type with this name already exists in this language");
         }
@@ -230,8 +218,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var wordType = await context.WordTypes
-            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == user.Id);
+        var wordType = await GetWordTypeOfUser(id, user.Id);
 
         if (wordType == null)
         {
@@ -247,5 +234,26 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
     private bool WordTypeExists(int id)
     {
         return context.WordTypes.Any(e => e.Id == id);
+    }
+
+    private Task<WordType?> GetWordTypeOfUser(int id, int userId)
+    {
+        return context.WordTypes
+           .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == userId);
+    }
+
+    private async Task<bool> LanguageExists(int langId)
+    {
+        return await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == langId) != null;
+    }
+
+    private async Task<bool> IsNameColision(int langId, string name)
+    {
+        return await context.WordTypes
+            .FirstOrDefaultAsync(wt =>
+                wt.LangId == langId
+                && wt.Name == name
+            ) != null;
     }
 }
