@@ -18,6 +18,7 @@ public class Language
 
     // Navigation properties
     public AppUser User { get; set; } = null!;
-    public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
-    public ICollection<WordType> WordTypes { get; set; } = new List<WordType>();
+    public ICollection<Lesson> Lessons { get; set; } = [];
+    public ICollection<WordType> WordTypes { get; set; } = [];
+    public ICollection<Word> Words { get; set; } = [];
 }

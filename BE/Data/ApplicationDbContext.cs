@@ -17,6 +17,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure unique indexes
         modelBuilder.Entity<Language>()
             .HasIndex(l => new { l.UserId, l.Name })
             .IsUnique();
@@ -28,5 +30,38 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<WordType>()
             .HasIndex(wt => wt.Name)
             .IsUnique();
+
+        // Configure cascade delete for Language relationships
+        modelBuilder.Entity<Language>()
+            .HasMany(l => l.Lessons)
+            .WithOne(l => l.Language)
+            .HasForeignKey(l => l.LangId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Language>()
+            .HasMany(l => l.WordTypes)
+            .WithOne(wt => wt.Language)
+            .HasForeignKey(wt => wt.LangId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Language>()
+            .HasMany(l => l.Words)
+            .WithOne(w => w.Language)
+            .HasForeignKey(w => w.LanguageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure cascade delete for WordType->Word relationship
+        modelBuilder.Entity<WordType>()
+            .HasMany<Word>()
+            .WithOne(w => w.WordType)
+            .HasForeignKey(w => w.WordTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure cascade delete for Word->WordInLesson relationship
+        modelBuilder.Entity<Word>()
+            .HasMany(w => w.WordInLessons)
+            .WithOne(wl => wl.Word)
+            .HasForeignKey(wl => wl.WordId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

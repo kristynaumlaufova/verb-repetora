@@ -19,13 +19,7 @@ import Register from "./components/Register/Register";
 import "./App.css";
 
 const AppContent: React.FC = () => {
-  const [currentLanguage, setCurrentLanguage] = useState("ENGLISH");
   const { isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleCreateNewLanguage = () => {
-    navigate("/manage-languages");
-  };
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -35,12 +29,8 @@ const AppContent: React.FC = () => {
     <div className="App">
       <LeftSideBar />
       <div className="main-container">
-        <TopBar
-          currentLanguage={currentLanguage}
-          onLanguageChange={setCurrentLanguage}
-          userName={user?.username || ""}
-          onCreateNewLanguage={handleCreateNewLanguage}
-        />        <Routes>
+        <TopBar userName={user?.username || ""} />{" "}
+        <Routes>
           <Route path="/manage-languages" element={<ManageLanguages />} />
           <Route path="/lessons" element={<Lessons />} />
           <Route path="/vocabulary" element={<Vocabulary />} />

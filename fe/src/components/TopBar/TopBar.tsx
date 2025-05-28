@@ -5,23 +5,13 @@ import LangMenu from "./LangMenu/LangMenu";
 import ProfileMenu from "./ProfileMenu/ProfileMenu";
 
 interface TopBarProps {
-  currentLanguage: string;
-  onLanguageChange: (language: string) => void;
   userName: string;
-  onCreateNewLanguage: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({
-  currentLanguage,
-  onLanguageChange,
-  userName,
-}) => {
+const TopBar: React.FC<TopBarProps> = ({ userName }) => {
   return (
     <div className={styles.topBar}>
-      <LangMenu
-        currentLanguage={currentLanguage}
-        onLanguageChange={onLanguageChange}
-      />
+      <LangMenu />
       <ProfileMenu userName={userName} />
     </div>
   );

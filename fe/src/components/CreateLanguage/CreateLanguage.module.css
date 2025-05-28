@@ -45,42 +45,13 @@
   margin-top: 1rem;
 }
 
-.cancelButton, .submitButton {
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.cancelButton {
-  background: none;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
-}
-
-.cancelButton:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.submitButton {
-  background-color: var(--main);
-  border: none;
-  color: white;
-}
-
-.submitButton:hover {
-  background-color: var(--accent-1);
-}
-
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -93,7 +64,7 @@
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .title {
@@ -118,14 +89,13 @@
   width: 100%;
   padding: 0.5rem;
   font-size: 1rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   outline: none;
-  transition: border-color 0.2s ease;
 }
 
 .inputGroup input:focus {
-  border-color: #2E96FF;
+  border-color: var(--accent-1);
 }
 
 .buttonGroup {
@@ -142,28 +112,28 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .closeButton {
-  background: transparent;
-  color: #6b7280;
+  background: none;
+  color: var(--main);
 }
 
 .closeButton:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--main-light);
 }
 
 .createButton {
-  background: var(--main);
-  color: white;
+  background: none;
+  color: var(--accent-1);
 }
 
 .createButton:hover {
-  background: var(--main-dark);
+  background-color: var(--accent-1-light);
 }
 
 .createButton:disabled {
-  background: var(--border-color);
+  background: none;
+  color: var(--text-secondary);
   cursor: not-allowed;
 }

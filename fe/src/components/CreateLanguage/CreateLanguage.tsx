@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./CreateLanguage.module.css";
+import useClickOutside from "../../hooks/useClickOutside";
 
 interface CreateLanguageProps {
   isOpen: boolean;
@@ -10,13 +11,14 @@ interface CreateLanguageProps {
 
 const CreateLanguage: React.FC<CreateLanguageProps> = ({
   isOpen,
-  onClose,
-  onCreateLanguage,
+  onClose,  onCreateLanguage,
   initialValue,
 }) => {
   const [languageName, setLanguageName] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useClickOutside(modalRef, onClose);
 
   useEffect(() => {
     if (isOpen) {
@@ -24,25 +26,6 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
       inputRef.current?.focus();
     }
   }, [isOpen, initialValue]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,20 +39,18 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
 
   return (
     <div className={styles.modalOverlay}>
-      <div className={styles.modal} ref={modalRef}>
-        <h2 className={styles.title}>
+      <div className={styles.modal} ref={modalRef}>        <h2 className={styles.title}>
           {initialValue ? "Edit language" : "Create new language"}
         </h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
-            <label htmlFor="languageName">Name</label>
             <input
               ref={inputRef}
               type="text"
               id="languageName"
               value={languageName}
               onChange={(e) => setLanguageName(e.target.value)}
-              placeholder="Spanish"
+              placeholder="Language name"
               maxLength={20}
               required
             />

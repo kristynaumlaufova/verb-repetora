@@ -1,69 +1,82 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import styles from "./ManageLanguages.module.css";
 import CreateLanguage from "../CreateLanguage/CreateLanguage";
+import DeleteConfirmation from "../DeleteConfirmation/DeleteConfirmation";
 import { languageService, Language } from "../../services/languageService";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const ManageLanguages: React.FC = () => {
-  const [languages, setLanguages] = useState<Language[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<number | null>(null);
+  const {
+    languages,
+    totalCount,
+    isLoading,
+    currentLanguage,
+    setCurrentLanguage,
+    loadMore,
+    refreshLanguages,
+  } = useLanguage();
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(10);
-  const [isLoading, setIsLoading] = useState(false);
+  const [deletingLanguage, setDeletingLanguage] = useState<Language | null>(
+    null
+  );
+  const [createError, setCreateError] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<string>("");
 
-  const loadLanguages = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await languageService.getLanguages({
-        pageNumber,
-        pageSize,
-      });
-      setLanguages(data.items);
-      setTotalCount(data.totalCount);
-      if (data.items.length > 0 && selectedLanguage === null) {
-        setSelectedLanguage(data.items[0].id);
-      }
-    } catch (error) {
-      console.error("Failed to load languages:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [pageNumber, pageSize, selectedLanguage]);
-
-  useEffect(() => {
-    loadLanguages();
-  }, [loadLanguages, pageNumber, pageSize]);
-
-  const handleEdit = async (language: Language) => {
+  const handleEdit = (language: Language) => {
     setEditingLanguage(language);
     setIsCreateModalOpen(true);
+    setCreateError("");
   };
+
+  const handleDelete = async () => {
+    if (!deletingLanguage || languages.length <= 1) {
+      setDeletingLanguage(null);
+      return;
+    }
+
+    try {
+      await languageService.deleteLanguage(deletingLanguage.id);
+      // After selected lang is deleted, select new one
+      if (currentLanguage?.id === deletingLanguage.id) {
+        const remainingLanguages = languages.filter(
+          (l) => l.id !== deletingLanguage.id
+        );
+        setCurrentLanguage(remainingLanguages[0]);
+      }
+      await refreshLanguages();
+      setDeletingLanguage(null);
+      setDeleteError("");
+    } catch (error: any) {
+      setDeleteError(
+        error.response?.data || "Failed to delete language. Please try again."
+      );
+    }
+  };
+
   const handleCreateOrUpdate = async (name: string) => {
     try {
       if (editingLanguage) {
-        const updated = await languageService.updateLanguage(
-          editingLanguage.id,
-          name
-        );
-        setLanguages(
-          languages.map((lang) => (lang.id === updated.id ? updated : lang))
-        );
+        await languageService.updateLanguage(editingLanguage.id, name);
       } else {
         await languageService.createLanguage(name);
-        await loadLanguages();
       }
+      await refreshLanguages();
       setIsCreateModalOpen(false);
       setEditingLanguage(null);
-    } catch (error) {
-      console.error("Failed to save language:", error);
+      setCreateError("");
+    } catch (error: any) {
+      setCreateError(
+        error.response?.data || "Failed to save language. Please try again."
+      );
     }
   };
 
   const handleModalClose = () => {
     setIsCreateModalOpen(false);
     setEditingLanguage(null);
+    setCreateError("");
   };
 
   const truncateName = (name: string): string => {
@@ -71,8 +84,12 @@ const ManageLanguages: React.FC = () => {
   };
   return (
     <div className={styles.container}>
+      {(createError || deleteError) && (
+        <div className={styles.errorNotification}>
+          {createError || deleteError}
+        </div>
+      )}
       <h1 className={styles.title}>Manage languages</h1>
-
       <div className={styles.languagesList}>
         <div className={styles.languagesWrapper}>
           {isLoading && languages.length === 0 ? (
@@ -86,8 +103,8 @@ const ManageLanguages: React.FC = () => {
                   <input
                     type="radio"
                     name="language"
-                    checked={selectedLanguage === language.id}
-                    onChange={() => setSelectedLanguage(language.id)}
+                    checked={currentLanguage?.id === language.id}
+                    onChange={() => setCurrentLanguage(language)}
                     className={styles.radioInput}
                   />
                   <span className={styles.radioControl}></span>
@@ -95,19 +112,29 @@ const ManageLanguages: React.FC = () => {
                     {truncateName(language.name)}
                   </span>
                 </label>
-                <button
-                  className={styles.editButton}
-                  onClick={() => handleEdit(language)}
-                >
-                  <i className="bi bi-pencil"></i>
-                </button>
+                <div className={styles.actionButtons}>
+                  <button
+                    className={styles.editButton}
+                    onClick={() => handleEdit(language)}
+                    title="Edit language"
+                  >
+                    <i className="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    className={styles.deleteButton}
+                    onClick={() => setDeletingLanguage(language)}
+                    title="Delete language"
+                  >
+                    <i className="bi bi-x-lg"></i>
+                  </button>
+                </div>
               </div>
             ))
           )}
           {languages.length < totalCount && (
             <button
               className={styles.loadMoreButton}
-              onClick={() => setPageNumber((prev) => prev + 1)}
+              onClick={loadMore}
               disabled={isLoading}
             >
               {isLoading ? "Loading..." : "Load more"}
@@ -122,12 +149,23 @@ const ManageLanguages: React.FC = () => {
           <i className="bi bi-plus"></i>
         </button>
       </div>
-
       <CreateLanguage
         isOpen={isCreateModalOpen}
         onClose={handleModalClose}
         onCreateLanguage={handleCreateOrUpdate}
         initialValue={editingLanguage?.name}
+      />
+      <DeleteConfirmation
+        isOpen={!!deletingLanguage}
+        onClose={() => {
+          setDeletingLanguage(null);
+          setDeleteError("");
+        }}
+        onDelete={handleDelete}
+        title="Do you really want to delete this language?"
+        message="If you delete this language, all words and lessons will be lost. This action can't be taken back."
+        isDeleteDisabled={languages.length <= 1}
+        disabledMessage="Cannot delete your last language. At least one language must remain."
       />
     </div>
   );
