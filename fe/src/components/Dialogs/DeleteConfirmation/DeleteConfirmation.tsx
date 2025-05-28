@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import styles from "./DeleteConfirmation.module.css";
+import dialogStyles from "../Dialog.module.css";
 import useClickOutside from "../../../hooks/useClickOutside";
 
 interface DeleteConfirmationProps {
@@ -27,16 +28,16 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay}>
+    <div className={dialogStyles.modalOverlay}>
       <div className={styles.modalContent} ref={modalRef}>
         <h2>{title}</h2>
         <p>{message}</p>
-        <div className={styles.buttonContainer}>
-          <button className={styles.closeButton} onClick={onClose}>
+        <div className={dialogStyles.buttonGroup}>
+          <button className={dialogStyles.closeButton} onClick={onClose}>
             CLOSE
           </button>
           <button
-            className={styles.deleteButton}
+            className={dialogStyles.deleteButton}
             onClick={onDelete}
             disabled={isDeleteDisabled}
             title={isDeleteDisabled ? disabledMessage : undefined}

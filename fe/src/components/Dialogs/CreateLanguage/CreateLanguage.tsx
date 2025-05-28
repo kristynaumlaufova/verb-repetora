@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./CreateLanguage.module.css";
+import dialogStyles from "../Dialog.module.css";
 import useClickOutside from "../../../hooks/useClickOutside";
 
 interface CreateLanguageProps {
@@ -39,9 +40,9 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modal} ref={modalRef}>
-        <h2 className={styles.title}>
+    <div className={dialogStyles.modalOverlay}>
+      <div className={dialogStyles.modal} ref={modalRef}>
+        <h2 className={dialogStyles.title}>
           {initialValue ? "Rename language" : "Create new language"}
         </h2>
         <form onSubmit={handleSubmit}>
@@ -57,17 +58,17 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
               required
             />
           </div>
-          <div className={styles.buttonGroup}>
+          <div className={dialogStyles.buttonGroup}>
             <button
               type="button"
               onClick={onClose}
-              className={styles.closeButton}
+              className={dialogStyles.closeButton}
             >
               CLOSE
             </button>
             <button
               type="submit"
-              className={styles.createButton}
+              className={dialogStyles.createButton}
               disabled={!languageName.trim()}
             >
               {initialValue ? "SAVE" : "CREATE"}
