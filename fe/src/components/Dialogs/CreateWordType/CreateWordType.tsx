@@ -87,7 +87,7 @@ const CreateWordType: React.FC<CreateWordTypeProps> = ({
           </div>
           <div className={styles.fieldsGroup}>
             <label>Fields</label>
-            <div className={styles.fieldsContainer}>
+            <div className={dialogStyles.fieldsContainer}>
               {fields.map((field, index) => (
                 <div key={index} className={styles.fieldRow}>
                   <input

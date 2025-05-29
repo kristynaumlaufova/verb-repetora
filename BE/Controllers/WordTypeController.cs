@@ -121,7 +121,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        if (await LanguageExists(request.LangId))
+        if (!await LanguageExists(request.LangId))
         {
             return BadRequest("Language not found");
         }
@@ -177,11 +177,6 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         if (wordType == null)
         {
             return NotFound();
-        }
-
-        if (await IsNameColision(wordType.LangId, request.Name))
-        {
-            return BadRequest("A word type with this name already exists in this language");
         }
 
         wordType.Name = request.Name;

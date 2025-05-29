@@ -115,17 +115,16 @@ const CreateWord: React.FC<CreateWordProps> = ({
             </select>
           </div>
           {fieldPlaceholders.length > 0 && (
-            <div className={styles.fieldsContainer}>
-              <label>Fields</label>{" "}
+            <div className={dialogStyles.fieldsContainer}>
+              <label>Fields</label>
               {fieldPlaceholders.map((placeholder: string, index: number) => (
-                <div key={index} className={styles.formGroup}>
-                  <label htmlFor={`field-${index}`}>{placeholder}</label>
+                <div key={index} className={styles.fieldRow}>
+                  <label htmlFor={`field-${index}`}>{placeholder}:</label>
                   <input
                     id={`field-${index}`}
                     type="text"
                     value={fields[index] || ""}
                     onChange={(e) => handleFieldChange(index, e.target.value)}
-                    placeholder={`Enter ${placeholder.toLowerCase()}`}
                     maxLength={200}
                   />
                 </div>

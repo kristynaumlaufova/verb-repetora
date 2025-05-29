@@ -9,15 +9,15 @@ export const useWordTypeManager = (langId: number | undefined) => {
   const [error, setError] = useState<string>("");
   const pageSize = 10;
   const lastLangIdRef = useRef<number | undefined>(langId);
+  
   const refreshWordTypes = useCallback(async (params?: Partial<WordTypeQueryParameters>) => {
-    
     if (!langId) {
       setWordTypes([]);
       setTotalCount(0);
       return;
     }
 
-    // If language has changed, reset pagination
+    // Reset pagination when lang was changed
     if (lastLangIdRef.current !== langId) {
       setPageNumber(1);
       lastLangIdRef.current = langId;
@@ -36,10 +36,10 @@ export const useWordTypeManager = (langId: number | undefined) => {
       const response = await wordTypeService.getWordTypes(queryParams);
       
       if (params?.pageNumber && params.pageNumber > 1) {
-        // Load more - append items
+        // Load more
         setWordTypes(prev => [...prev, ...response.items]);
       } else {
-        // Initial load or refresh - replace items
+        // Initial load or refresh
         setWordTypes(response.items);
       }
       

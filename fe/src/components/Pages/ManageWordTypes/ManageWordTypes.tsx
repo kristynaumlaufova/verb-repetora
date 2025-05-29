@@ -51,7 +51,6 @@ const ManageWordTypes: React.FC = () => {
   };
 
   const handleCreateOrUpdate = async (name: string, fields: string) => {
-    console.log(fields);
     const success = editingWordType
       ? await updateWordType(editingWordType.id, name, fields)
       : await createWordType(name, fields);

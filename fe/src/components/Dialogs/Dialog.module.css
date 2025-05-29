@@ -86,3 +86,39 @@
 .deleteButton:disabled:hover {
     background: none;
 }
+
+/* SCROLLBAR */
+.fieldsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    max-height: 300px;
+    overflow-y: auto; 
+}
+
+.fieldsContainer {
+    scrollbar-width: thin;
+    scrollbar-color: var(--main) transparent;
+}
+
+.fieldsContainer::-webkit-scrollbar {
+    width: 2px;
+}
+
+.fieldsContainer::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.fieldsContainer::-webkit-scrollbar-thumb {
+    background: var(--main);
+    border-radius: 2px;
+}
+
+.fieldsContainer::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-1);
+}
+
+.fieldsContainer:hover {
+    scrollbar-color: var(--accent-1) transparent; 
+}
