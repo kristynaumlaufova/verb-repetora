@@ -1,0 +1,52 @@
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  outline: none;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  border-color: var(--accent-1);
+}
+
+.fieldsContainer {
+  margin-bottom: 1.5rem;
+}
+
+.fieldsContainer > label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.fieldsContainer .formGroup {
+  margin-bottom: 1rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border-color);
+}
+
+.fieldsContainer .formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.fieldsContainer .formGroup label {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}

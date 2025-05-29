@@ -12,12 +12,12 @@ import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
 import Dashboard from "./components/Pages/Dashboard";
 import Lessons from "./components/Pages/Lessons";
-import Vocabulary from "./components/Pages/Vocabulary";
 import ManageLanguages from "./components/Pages/ManageLanguages/ManageLanguages";
 import ManageWordTypes from "./components/Pages/ManageWordTypes/ManageWordTypes";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import "./App.css";
+import ManageWords from "./components/Pages/ManageWords/ManageWords";
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -35,7 +35,7 @@ const AppContent: React.FC = () => {
           <Route path="/manage-languages" element={<ManageLanguages />} />
           <Route path="/word-types" element={<ManageWordTypes />} />
           <Route path="/lessons" element={<Lessons />} />
-          <Route path="/vocabulary" element={<Vocabulary />} />
+          <Route path="/vocabulary" element={<ManageWords />} />
           <Route path="/" element={<Dashboard />} />
         </Routes>
       </div>

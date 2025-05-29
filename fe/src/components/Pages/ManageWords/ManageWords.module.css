@@ -1,0 +1,47 @@
+.wordSection {
+  flex: 0 0 200px;
+}
+
+.wordKeyword {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.typeSection {
+  flex: 0 0 150px;
+  color: var(--text-secondary);
+}
+
+.wordType {
+  background-color: var(--accent-1-light);
+  color: var(--accent-1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.fieldsSection {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .wordSection, .typeSection {
+    flex: none;
+    margin-bottom: 0.5rem;
+  }
+
+  .wordKeyword {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .fieldsSection {
+    flex: none;
+    width: 100%;
+  }
+}

@@ -24,7 +24,6 @@ export interface LanguageQueryParameters {
 
 export const languageService = {
   getLanguages: async (params: LanguageQueryParameters = {}): Promise<PaginatedResponse<Language>> => {
-    console.log(apiClient);
     const response = await apiClient.get('/Language', { 
       params: {
         pageNumber: params.pageNumber || 1,

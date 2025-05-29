@@ -9,8 +9,12 @@ public class Word
     [Required]
     public int WordTypeId { get; set; }
 
+    [Required] public int LanguageId { get; set; }
+
     [Required]
-    public int LanguageId { get; set; }
+    public string Keyword { get; set; } = string.Empty;
+
+    public string Fields { get; set; } = string.Empty;
 
     // Navigation properties
     public WordType WordType { get; set; } = null!;

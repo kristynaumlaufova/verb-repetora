@@ -1,17 +1,26 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { wordTypeService, WordType, WordTypeQueryParameters } from '../services/wordTypeService';
 
-export const useWordTypeManager = (langId: number | undefined) => {  const [wordTypes, setWordTypes] = useState<WordType[]>([]);
+export const useWordTypeManager = (langId: number | undefined) => {
+  const [wordTypes, setWordTypes] = useState<WordType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [error, setError] = useState<string>("");
+  const pageSize = 10;
+  const lastLangIdRef = useRef<number | undefined>(langId);
   const refreshWordTypes = useCallback(async (params?: Partial<WordTypeQueryParameters>) => {
+    
     if (!langId) {
       setWordTypes([]);
       setTotalCount(0);
       return;
+    }
+
+    // If language has changed, reset pagination
+    if (lastLangIdRef.current !== langId) {
+      setPageNumber(1);
+      lastLangIdRef.current = langId;
     }
 
     setIsLoading(true);
@@ -44,7 +53,7 @@ export const useWordTypeManager = (langId: number | undefined) => {  const [word
     } finally {
       setIsLoading(false);
     }
-  }, [langId]);
+  }, [langId, pageNumber, pageSize]);
 
   const deleteWordType = useCallback(async (id: number) => {
     try {
@@ -86,8 +95,15 @@ export const useWordTypeManager = (langId: number | undefined) => {  const [word
     } catch (error: any) {
       setError(error.message || "Failed to update word type");
       return false;
+    }  }, [refreshWordTypes]);
+
+  // Refresh word types when language changes
+  useEffect(() => {
+    if (langId !== undefined) {
+      refreshWordTypes();
     }
-  }, [refreshWordTypes]);
+  }, [langId, refreshWordTypes]);
+
   return {
     wordTypes,
     isLoading,

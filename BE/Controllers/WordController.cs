@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 using BE.Data;
 using BE.Models;
+using BE.Models.Dto;
 
 namespace BE.Controllers;
 
@@ -11,19 +14,68 @@ namespace BE.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class WordController(ApplicationDbContext context) : ControllerBase
+[Authorize]
+public class WordController(ApplicationDbContext context, UserManager<AppUser> userManager) : ControllerBase
 {
     /// <summary>
     /// Retrieves all words from the database.
-    /// </summary>
-    /// <returns>A list of all words.</returns>
+    /// </summary>    /// <returns>A paginated list of words.</returns>
     /// <example>
-    /// GET /api/Word
+    /// GET /api/Word?langId=1&pageNumber=1&pageSize=10&searchTerm=text&sortBy=keyword&sortDescending=false
     /// </example>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Word>>> GetWords()
+    public async Task<ActionResult<PaginatedResponse<WordDto>>> GetWords([FromQuery] WordQueryParameters parameters)
     {
-        return await context.Words.ToListAsync();
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var query = context.Words
+            .Include(w => w.Language)
+            .Include(w => w.WordType)
+            .Where(w => w.LanguageId == parameters.LangId && w.Language.UserId == user.Id);
+
+        // Add search
+        if (!string.IsNullOrEmpty(parameters.SearchTerm))
+        {
+            query = query.Where(w => w.Keyword.Contains(parameters.SearchTerm));
+        }
+
+        // Add sorting
+        query = parameters.SortBy?.ToLower() switch
+        {
+            "keyword" => parameters.SortDescending
+                ? query.OrderByDescending(w => w.Keyword)
+                : query.OrderBy(w => w.Keyword),
+            "type" => parameters.SortDescending
+                ? query.OrderByDescending(w => w.WordType.Name)
+                : query.OrderBy(w => w.WordType.Name),
+            _ => query.OrderBy(w => w.Keyword)
+        };
+
+        var totalCount = await query.CountAsync();
+
+        // Add pagination
+        var items = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .Select(w => new WordDto(
+                w.Id,
+                w.WordTypeId,
+                w.LanguageId,
+                w.Keyword,
+                w.Fields
+            ))
+            .ToListAsync();
+
+        return Ok(new PaginatedResponse<WordDto>(
+            items,
+            totalCount,
+            parameters.PageNumber,
+            parameters.PageSize
+        ));
     }
 
     /// <summary>
@@ -31,19 +83,33 @@ public class WordController(ApplicationDbContext context) : ControllerBase
     /// </summary>
     /// <param name="id">The ID of the word to retrieve.</param>
     /// <example>
-    /// GET /api/Word/5
-    /// </example>
+    /// GET /api/Word/5    
+    /// /// </example>
     [HttpGet("{id}")]
-    public async Task<ActionResult<Word>> GetWord(int id)
+    public async Task<ActionResult<WordDto>> GetWord(int id)
     {
-        var word = await context.Words.FindAsync(id);
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
 
-        if (word == null)
+        var word = await context.Words
+            .Include(w => w.Language)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (word == null || word.Language.UserId != user.Id)
         {
             return NotFound();
         }
 
-        return word;
+        return new WordDto(
+            word.Id,
+            word.WordTypeId,
+            word.LanguageId,
+            word.Keyword,
+            word.Fields
+        );
     }
 
     /// <summary>
@@ -58,15 +124,51 @@ public class WordController(ApplicationDbContext context) : ControllerBase
     ///     "translation": "hola",
     ///     "languageId": 1,
     ///     "typeId": 1
-    /// }
-    /// </example>
+    /// }    /// </example>
     [HttpPost]
-    public async Task<ActionResult<Word>> CreateWord(Word word)
+    public async Task<ActionResult<WordDto>> CreateWord(CreateWordRequest request)
     {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+        var language = await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == request.LanguageId && l.UserId == user.Id);
+
+        if (language == null)
+        {
+            return BadRequest("Language not found or you don't have access to it");
+        }
+
+        var wordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id == request.WordTypeId && wt.LangId == request.LanguageId);
+
+        if (wordType == null)
+        {
+            return BadRequest("Word type not found or doesn't belong to the specified language");
+        }
+
+        var word = new Word
+        {
+            WordTypeId = request.WordTypeId,
+            LanguageId = request.LanguageId,
+            Keyword = request.Keyword,
+            Fields = request.Fields
+        };
+
         context.Words.Add(word);
         await context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetWord), new { id = word.Id }, word);
+        var dto = new WordDto(
+            word.Id,
+            word.WordTypeId,
+            word.LanguageId,
+            word.Keyword,
+            word.Fields
+        );
+
+        return CreatedAtAction(nameof(GetWord), new { id = word.Id }, dto);
     }
 
     /// <summary>
@@ -82,21 +184,52 @@ public class WordController(ApplicationDbContext context) : ControllerBase
     ///     "translation": "hola actualizado",
     ///     "languageId": 1,
     ///     "typeId": 1
-    /// }
-    /// </example>
+    /// }    /// </example>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateWord(int id, Word word)
+    public async Task<ActionResult<WordDto>> UpdateWord(int id, UpdateWordRequest request)
     {
-        if (id != word.Id)
+        if (id != request.Id)
         {
             return BadRequest();
         }
 
-        context.Entry(word).State = EntityState.Modified;
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+        var word = await context.Words
+            .Include(w => w.Language)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (word == null || word.Language.UserId != user.Id)
+        {
+            return NotFound();
+        }
+
+        var wordType = await context.WordTypes
+            .FirstOrDefaultAsync(wt => wt.Id == request.WordTypeId && wt.LangId == word.LanguageId);
+
+        if (wordType == null)
+        {
+            return BadRequest("Word type not found or doesn't belong to the word's language");
+        }
+
+        word.WordTypeId = request.WordTypeId;
+        word.Keyword = request.Keyword;
+        word.Fields = request.Fields;
 
         try
         {
             await context.SaveChangesAsync();
+
+            return new WordDto(
+                word.Id,
+                word.WordTypeId,
+                word.LanguageId,
+                word.Keyword,
+                word.Fields
+            );
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -104,13 +237,8 @@ public class WordController(ApplicationDbContext context) : ControllerBase
             {
                 return NotFound();
             }
-            else
-            {
-                throw;
-            }
+            throw;
         }
-
-        return NoContent();
     }
 
     /// <summary>
@@ -118,13 +246,20 @@ public class WordController(ApplicationDbContext context) : ControllerBase
     /// </summary>
     /// <param name="id">The ID of the word to delete.</param>
     /// <example>
-    /// DELETE /api/Word/5
-    /// </example>
+    /// DELETE /api/Word/5    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWord(int id)
     {
-        var word = await context.Words.FindAsync(id);
-        if (word == null)
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+        var word = await context.Words
+            .Include(w => w.Language)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (word == null || word.Language.UserId != user.Id)
         {
             return NotFound();
         }
