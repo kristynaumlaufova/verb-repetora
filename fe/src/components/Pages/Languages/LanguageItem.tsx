@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./ManageLanguages.module.css";
+import styles from "./Languages.module.css";
 import pageStyles from "../Pages.module.css";
 import { Language } from "../../../services/languageService";
 

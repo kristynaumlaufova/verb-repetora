@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./ManageWordTypes.module.css";
+import styles from "./WordTypes.module.css";
 import pageStyles from "../Pages.module.css";
 import { WordType } from "../../../services/wordTypeService";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import pageStyles from "../Pages.module.css";
-import lessonStyles from "./ManageLessons.module.css";
+import lessonStyles from "./Lessons.module.css";
 import { Lesson } from "../../../services/lessonService";
 
 interface LessonItemProps {

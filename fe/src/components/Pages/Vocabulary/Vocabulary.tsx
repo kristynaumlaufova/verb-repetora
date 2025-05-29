@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import styles from "./ManageWords.module.css";
+import styles from "./Vocabulary.module.css";
 import pageStyles from "../Pages.module.css";
 import CreateWord from "../../Dialogs/CreateWord/CreateWord";
 import WordItem from "./WordItem";

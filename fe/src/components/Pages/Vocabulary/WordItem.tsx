@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "./ManageWords.module.css";
+import styles from "./Vocabulary.module.css";
 import pageStyles from "../Pages.module.css";
 import { Word } from "../../../services/wordService";
 import { WordType } from "../../../services/wordTypeService";

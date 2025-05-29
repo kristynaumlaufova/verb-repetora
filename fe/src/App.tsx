@@ -18,6 +18,7 @@ import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import "./App.css";
 import Vocabulary from "./components/Pages/Vocabulary/Vocabulary";
+import Review from "./components/Pages/Review/Review";
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, user } = useAuth();

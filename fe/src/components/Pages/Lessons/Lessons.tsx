@@ -3,7 +3,7 @@ import { useLanguage } from "../../../contexts/LanguageContext";
 import { useLessonManager } from "../../../hooks/useLessonManager";
 import { Lesson, lessonService } from "../../../services/lessonService";
 import pageStyles from "../Pages.module.css";
-import styles from "./ManageLessons.module.css";
+import styles from "./Lessons.module.css";
 import LessonItem from "./LessonItem";
 import CreateLesson from "../../Dialogs/CreateLesson/CreateLesson";
 import DeleteConfirmation from "../../Dialogs/DeleteConfirmation/DeleteConfirmation";
