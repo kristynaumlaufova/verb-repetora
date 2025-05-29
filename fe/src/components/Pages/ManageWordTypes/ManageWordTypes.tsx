@@ -67,7 +67,7 @@ const ManageWordTypes: React.FC = () => {
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
-      <h1 className={pageStyles.title}>Manage word types</h1>
+      <h1 className={pageStyles.title}>Word types</h1>
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
           {isLoading ? (

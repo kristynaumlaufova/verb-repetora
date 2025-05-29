@@ -3,6 +3,7 @@ using System;
 using BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250529092522_FixWordTypeRelationship")]
+    partial class FixWordTypeRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -184,11 +187,16 @@ namespace BE.Migrations
                     b.Property<int>("WordTypeId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("WordTypeId1")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LanguageId");
 
                     b.HasIndex("WordTypeId");
+
+                    b.HasIndex("WordTypeId1");
 
                     b.ToTable("Words");
                 });
@@ -425,10 +433,14 @@ namespace BE.Migrations
                         .IsRequired();
 
                     b.HasOne("BE.Models.WordType", "WordType")
-                        .WithMany("Words")
+                        .WithMany()
                         .HasForeignKey("WordTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BE.Models.WordType", null)
+                        .WithMany("Words")
+                        .HasForeignKey("WordTypeId1");
 
                     b.Navigation("Language");
 

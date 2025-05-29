@@ -12,8 +12,18 @@ export type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", icon: "bi bi-house-door", label: "Dashboard", path: "/" },
-  { id: "lessons", icon: "bi bi-book", label: "Lessons", path: "/lessons" },
+  {
+    id: "dashboard",
+    icon: "bi bi-house-door",
+    label: "Dashboard",
+    path: "/",
+  },
+  {
+    id: "lessons",
+    icon: "bi bi-book",
+    label: "Lessons",
+    path: "/lessons",
+  },
   {
     id: "vocabulary",
     icon: "bi bi-journal-text",

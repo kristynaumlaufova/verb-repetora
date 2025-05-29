@@ -1,141 +1,222 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
 
 using BE.Data;
 using BE.Models;
+using BE.Models.Dto;
 
-namespace BE.Controllers;
-
-/// <summary>
-/// Controller for lesson related operations.
-/// </summary>
-[ApiController]
-[Route("api/[controller]")]
-public class LessonController(ApplicationDbContext context) : ControllerBase
+namespace BE.Controllers
 {
-    /// <summary>
-    /// Retrieves all lessons from the database.
-    /// </summary>
-    /// <returns>A list of all lessons.</returns>
-    /// <example>
-    /// GET /api/Lesson
-    /// </example>
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Lesson>>> GetLessons()
+    [Authorize]
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LessonController(ApplicationDbContext context, UserManager<AppUser> userManager) : ControllerBase
     {
-        return await context.Lessons.ToListAsync();
-    }
-
-    /// <summary>
-    /// Retrieves a specific lesson by its ID.
-    /// </summary>
-    /// <param name="id">The ID of the lesson to retrieve.</param>
-    /// <returns>The requested lesson if found.</returns>
-    /// <example>
-    /// GET /api/Lesson/5
-    /// </example>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Lesson>> GetLesson(int id)
-    {
-        var lesson = await context.Lessons.FindAsync(id);
-
-        if (lesson == null)
+        [HttpGet]
+        public async Task<ActionResult<PaginatedResponse<LessonDto>>> GetLessons([FromQuery] LessonQueryParameters parameters)
         {
-            return NotFound();
-        }
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
 
-        return lesson;
-    }
+            var query = context.Lessons
+                .Where(l => l.UserId == user.Id && l.LangId == parameters.LangId)
+                .AsQueryable();
 
-    /// <summary>
-    /// Creates a new lesson.
-    /// </summary>
-    /// <param name="lesson">The lesson object to create.</param>
-    /// <returns>The created lesson.</returns>
-    /// <example>
-    /// POST /api/Lesson
-    /// {
-    ///     "name": "Basic Greetings",
-    ///     "description": "Learn common greeting phrases",
-    ///     "languageId": 1
-    /// }
-    /// </example>
-    [HttpPost]
-    public async Task<ActionResult<Lesson>> CreateLesson(Lesson lesson)
-    {
-        context.Lessons.Add(lesson);
-        await context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetLesson), new { id = lesson.Id }, lesson);
-    }
-
-    /// <summary>
-    /// Updates a specific lesson.
-    /// </summary>
-    /// <param name="id">The ID of the lesson to update.</param>
-    /// <param name="lesson">The updated lesson object.</param>
-    /// <example>
-    /// PUT /api/Lesson/5
-    /// {
-    ///     "id": 5,
-    ///     "name": "Updated Greetings",
-    ///     "description": "Updated lesson description",
-    ///     "languageId": 1
-    /// }
-    /// </example>
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateLesson(int id, Lesson lesson)
-    {
-        if (id != lesson.Id)
-        {
-            return BadRequest();
-        }
-
-        context.Entry(lesson).State = EntityState.Modified;
-
-        try
-        {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!LessonExists(id))
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
             {
-                return NotFound();
+                query = query.Where(l => l.Name.Contains(parameters.SearchTerm));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (!string.IsNullOrWhiteSpace(parameters.SortBy))
+            {
+                query = parameters.SortBy.ToLower() switch
+                {
+                    "name" => parameters.SortDescending ? query.OrderByDescending(l => l.Name) : query.OrderBy(l => l.Name),
+                    _ => query.OrderBy(l => l.Name)
+                };
             }
             else
             {
-                throw;
+                query = query.OrderBy(l => l.Name);
             }
+
+            var items = await query
+                .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+                .Take(parameters.PageSize)
+                .Select(l => new LessonDto
+                {
+                    Id = l.Id,
+                    Name = l.Name,
+                    LanguageId = l.LangId
+                })
+                .ToListAsync();
+
+            return Ok(new PaginatedResponse<LessonDto>(items, totalCount, parameters.PageNumber, parameters.PageSize));
         }
 
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Deletes a specific lesson.
-    /// </summary>
-    /// <param name="id">The ID of the lesson to delete.</param>
-    /// <example>
-    /// DELETE /api/Lesson/5
-    /// </example>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteLesson(int id)
-    {
-        var lesson = await context.Lessons.FindAsync(id);
-        if (lesson == null)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<LessonDto>> GetLesson(int id)
         {
-            return NotFound();
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+
+            if (lesson == null)
+            {
+                return NotFound();
+            }
+
+            return new LessonDto
+            {
+                Id = lesson.Id,
+                Name = lesson.Name,
+                LanguageId = lesson.LangId
+            };
         }
 
-        context.Lessons.Remove(lesson);
-        await context.SaveChangesAsync();
+        [HttpPost]
+        public async Task<ActionResult<LessonDto>> CreateLesson(CreateLessonDto createDto)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
 
-        return NoContent();
-    }
+            var lesson = new Lesson
+            {
+                Name = createDto.Name,
+                LangId = createDto.LanguageId,
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
-    private bool LessonExists(int id)
-    {
-        return context.Lessons.Any(e => e.Id == id);
+            context.Lessons.Add(lesson);
+            await context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetLesson), new { id = lesson.Id }, new LessonDto
+            {
+                Id = lesson.Id,
+                Name = lesson.Name,
+                LanguageId = lesson.LangId
+            });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateLesson(int id, UpdateLessonDto updateDto)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);            if (lesson == null)
+            {
+                return NotFound();
+            }
+
+            // Only update if the name has changed
+            if (lesson.Name != updateDto.Name)
+            {
+                lesson.Name = updateDto.Name;
+                lesson.UpdatedAt = DateTime.UtcNow;
+                await context.SaveChangesAsync();
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLesson(int id)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+
+            if (lesson == null)
+            {
+                return NotFound();
+            }
+
+            context.Lessons.Remove(lesson);
+            await context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/words")]
+        public async Task<IActionResult> AssignWords(int id, AssignWordsDto assignDto)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .Include(l => l.WordInLessons)
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+
+            if (lesson == null)
+            {
+                return NotFound();
+            }
+
+            var words = await context.Words
+                .Where(w => assignDto.WordIds.Contains(w.Id))
+                .ToListAsync();
+
+            foreach (var word in words)
+            {
+                if (!lesson.WordInLessons.Any(wl => wl.WordId == word.Id))
+                {
+                    lesson.WordInLessons.Add(new WordInLesson
+                    {
+                        LessonId = id,
+                        WordId = word.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            lesson.UpdatedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}/words")]
+        public async Task<IActionResult> RemoveWords(int id, AssignWordsDto removeDto)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+
+            if (lesson == null)
+            {
+                return NotFound();
+            }
+
+            var wordsInLesson = await context.Set<WordInLesson>()
+                .Where(wl => wl.LessonId == id && removeDto.WordIds.Contains(wl.WordId))
+                .ToListAsync();
+
+            if (!wordsInLesson.Any())
+            {
+                return NotFound();
+            }
+
+            context.Set<WordInLesson>().RemoveRange(wordsInLesson);
+            lesson.UpdatedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

@@ -11,9 +11,9 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
 import Dashboard from "./components/Pages/Dashboard";
-import Lessons from "./components/Pages/Lessons";
 import ManageLanguages from "./components/Pages/ManageLanguages/ManageLanguages";
 import ManageWordTypes from "./components/Pages/ManageWordTypes/ManageWordTypes";
+import ManageLessons from "./components/Pages/ManageLessons/ManageLessons";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import "./App.css";
@@ -34,8 +34,8 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route path="/manage-languages" element={<ManageLanguages />} />
           <Route path="/word-types" element={<ManageWordTypes />} />
-          <Route path="/lessons" element={<Lessons />} />
           <Route path="/vocabulary" element={<ManageWords />} />
+          <Route path="/lessons" element={<ManageLessons />} />
           <Route path="/" element={<Dashboard />} />
         </Routes>
       </div>

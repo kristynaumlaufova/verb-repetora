@@ -87,7 +87,7 @@ const ManageLanguages: React.FC = () => {
           {createError || deleteError}
         </div>
       )}
-      <h1 className={pageStyles.title}>Manage languages</h1>
+      <h1 className={pageStyles.title}>Languages</h1>
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
           {isLoading && languages.length === 0 ? (

@@ -52,7 +52,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         // Configure cascade delete for WordType->Word relationship
         modelBuilder.Entity<WordType>()
-            .HasMany<Word>()
+            .HasMany(wt => wt.Words)
             .WithOne(w => w.WordType)
             .HasForeignKey(w => w.WordTypeId)
             .OnDelete(DeleteBehavior.Cascade);

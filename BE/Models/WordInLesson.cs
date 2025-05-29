@@ -9,6 +9,13 @@ public class WordInLesson
     [Required]
     public int WordId { get; set; }
 
+    [Required]
+    public int LessonId { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
     // Navigation properties
     public Word Word { get; set; } = null!;
+    public Lesson Lesson { get; set; } = null!;
 }

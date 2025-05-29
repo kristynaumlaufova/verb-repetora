@@ -83,7 +83,7 @@ const ManageWords: React.FC = () => {
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
-      <h1 className={pageStyles.title}>Manage words</h1>
+      <h1 className={pageStyles.title}>Vocabulary</h1>
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
           {" "}
