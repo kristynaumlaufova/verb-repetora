@@ -13,7 +13,9 @@ export const useWordManager = (langId: number | undefined) => {
   const [error, setError] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  
   const pageSize = 10;
+  
   const refreshWords = useCallback(async (search?: string) => {
     if (!langId) return;
 
@@ -47,8 +49,11 @@ export const useWordManager = (langId: number | undefined) => {
       setIsLoading(false);
     }
   }, [langId, searchTerm]);
+
   const loadMore = async () => {
-    if (!langId || isLoading || words.length >= totalCount) return;
+    if (!langId || isLoading || words.length >= totalCount) {
+       return;
+    }
 
     setIsLoading(true);
     const nextPage = currentPage + 1;

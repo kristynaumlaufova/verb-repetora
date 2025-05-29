@@ -7,9 +7,11 @@ export const useWordTypeManager = (langId: number | undefined) => {
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [error, setError] = useState<string>("");
-  const pageSize = 10;
+
   const lastLangIdRef = useRef<number | undefined>(langId);
-  
+
+  const pageSize = 10;
+
   const refreshWordTypes = useCallback(async (params?: Partial<WordTypeQueryParameters>) => {
     if (!langId) {
       setWordTypes([]);

@@ -42,58 +42,26 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     setSelectedWords([]);
   };
 
-  useEffect(() => {
-    if (!isOpen) {
-      resetDialogState();
-    }
-  }, [isOpen]);
   // Dialog initialization
   useEffect(() => {
     if (isOpen) {
-      console.log("Dialog opened, initialValue:", initialValue);
-      console.log("Full initialValue object:", JSON.stringify(initialValue));
-      
       setLessonName(initialValue?.name || "");
       inputRef.current?.focus();
       setSelectedWords([]);
-      
       if (currentLanguage?.id) {
-        console.log("Refreshing words for language:", currentLanguage.id);
         refreshWords();
       }
-      
-      // Check if wordIds exists and log its type
-      if (initialValue) {
-        console.log("InitialValue has wordIds:", initialValue.wordIds);
-        console.log("Type of wordIds:", typeof initialValue.wordIds);
-        if (Array.isArray(initialValue.wordIds)) {
-          console.log("wordIds is an array with length:", initialValue.wordIds.length);
-        }
-      }
+    } else {
+      resetDialogState();
     }
   }, [isOpen, initialValue, currentLanguage?.id, refreshWords]);
 
-
+  // Load words of current lesson
   useEffect(() => {
     if (isOpen && initialValue && initialValue.wordIds && words.length > 0) {
-      console.log("Setting selected words for lesson:", {
-        lessonId: initialValue.id,
-        lessonName: initialValue.name,
-        wordIds: initialValue.wordIds,
-      });
-
       const selectedWordObjects = words.filter((word) =>
         initialValue.wordIds.includes(word.id)
       );
-
-      console.log("Found matching words:", {
-        found: selectedWordObjects.length,
-        words: selectedWordObjects.map((w) => ({
-          id: w.id,
-          keyword: w.keyword,
-        })),
-        total: words.length,
-      });
 
       if (selectedWordObjects.length > 0) {
         setSelectedWords(selectedWordObjects);
@@ -101,6 +69,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     }
   }, [isOpen, initialValue, words]);
 
+  // Search logic
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setSearchResults([]);
@@ -121,13 +90,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
           word.languageId === currentLanguage?.id &&
           word.keyword.toLowerCase().includes(searchTerm.toLowerCase())
       );
-
-      console.log("Search results:", {
-        searchTerm,
-        totalWords: words.length,
-        filteredCount: filteredWords.length,
-        currentLanguageId: currentLanguage?.id,
-      });
 
       setSearchResults(filteredWords);
       setIsSearching(false);
@@ -240,7 +202,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
               </div>
               <div className={styles.selectedWordsList}>
                 {selectedWords.map((word) => {
-                  console.log("Rendering word:", word);
                   const wordType = getWordType(word.wordTypeId);
                   return (
                     <div key={word.id} className={styles.selectedWordItem}>

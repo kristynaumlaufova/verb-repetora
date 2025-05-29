@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -10,11 +10,22 @@ using BE.Models.Dto;
 
 namespace BE.Controllers
 {
+    /// <summary>
+    /// Controller for lesson related operations.
+    /// </summary>
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class LessonController(ApplicationDbContext context, UserManager<AppUser> userManager) : ControllerBase
     {
+        /// <summary>
+        /// Retrieves all lessons from the database.
+        /// </summary>
+        /// <param name="parameters">Query parameters for pagination, filtering, and sorting.</param>
+        /// <returns>A paginated list of lessons.</returns>
+        /// <example>
+        /// GET /api/Lesson?langId=1&pageNumber=1&pageSize=10&searchTerm=lesson1
+        /// </example>
         [HttpGet]
         public async Task<ActionResult<PaginatedResponse<LessonDto>>> GetLessons([FromQuery] LessonQueryParameters parameters)
         {
@@ -44,6 +55,7 @@ namespace BE.Controllers
             {
                 query = query.OrderBy(l => l.Name);
             }
+
             var items = await query
                 .Include(l => l.Words)
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
@@ -62,15 +74,21 @@ namespace BE.Controllers
 
 
 
+        /// <summary>
+        /// Retrieves a lesson by its ID.
+        /// </summary>
+        /// <param name="id">The ID of the lesson to retrieve.</param>
+        /// <returns>Lesson with the given ID.</returns>
+        /// <example>
+        /// GET /api/Lesson/5
+        /// </example>
         [HttpGet("{id}")]
         public async Task<ActionResult<LessonDto>> GetLesson(int id)
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var lesson = await context.Lessons
-                .Include(l => l.Words)
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+            var lesson = await GetLessonOfUser(id, user.Id);
 
             if (lesson == null)
             {
@@ -85,6 +103,20 @@ namespace BE.Controllers
                 WordIds = lesson.Words.Select(wl => wl.Id).ToList()
             };
         }
+
+        /// <summary>
+        /// Creates a new lesson.
+        /// </summary>
+        /// <param name="createDto">The lesson to create.</param>
+        /// <returns>The created lesson.</returns>
+        /// <example>
+        /// POST /api/Lesson
+        /// {
+        ///     "name": "Basic Verbs",
+        ///     "languageId": 1,
+        ///     "wordIds": [1, 2, 3]
+        /// }
+        /// </example>
         [HttpPost]
         public async Task<ActionResult<LessonDto>> CreateLesson(CreateLessonDto createDto)
         {
@@ -100,16 +132,9 @@ namespace BE.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            if (createDto.WordIds?.Any() == true)
+            if (createDto.WordIds?.Count > 0)
             {
-                var words = await context.Words
-                    .Where(w => createDto.WordIds.Contains(w.Id))
-                    .ToListAsync();
-
-                foreach (var word in words)
-                {
-                    lesson.Words.Add(word);
-                }
+                lesson.Words = await GetWords(createDto.WordIds);
             }
 
             context.Lessons.Add(lesson);
@@ -124,79 +149,55 @@ namespace BE.Controllers
             });
         }
 
+        /// <summary>
+        /// Updates a specific lesson.
+        /// </summary>
+        /// <param name="id">The ID of the lesson to update.</param>
+        /// <param name="updateDto">The updated lesson.</param>
+        /// <returns>No content if successful.</returns>
+        /// <example>
+        /// PUT /api/Lesson/5
+        /// {
+        ///     "name": "Updated Verbs",
+        ///     "wordIds": [1, 2, 4, 5]
+        /// }
+        /// </example>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateLesson(int id, UpdateLessonDto updateDto)
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var lesson = await context.Lessons
-                .Include(l => l.Words)
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+            var lesson = await GetLessonOfUser(id, user.Id);
 
             if (lesson == null)
             {
                 return NotFound();
             }
 
-            bool shouldUpdate = false;
-
-            // Update name if changed
-            if (lesson.Name != updateDto.Name)
-            {
-                lesson.Name = updateDto.Name;
-                shouldUpdate = true;
-            }
-
-            // Update word assignments
-            var currentWordIds = lesson.Words.Select(w => w.Id).ToHashSet();
-            var newWordIds = updateDto.WordIds.ToHashSet();
-
-            // Get all current words as a collection to modify
-            var currentWords = new List<Word>(lesson.Words);
-
-            // Remove words that are no longer in the list
-            foreach (var word in currentWords)
-            {
-                if (!newWordIds.Contains(word.Id))
-                {
-                    lesson.Words.Remove(word);
-                    shouldUpdate = true;
-                }
-            }
-
-            // Add new words
-            var wordsToAdd = newWordIds.Except(currentWordIds);
-            if (wordsToAdd.Any())
-            {
-                var words = await context.Words
-                    .Where(w => wordsToAdd.Contains(w.Id))
-                    .ToListAsync();
-
-                foreach (var word in words)
-                {
-                    lesson.Words.Add(word);
-                }
-                shouldUpdate = true;
-            }
-
-            if (shouldUpdate)
-            {
-                lesson.UpdatedAt = DateTime.UtcNow;
-                await context.SaveChangesAsync();
-            }
+            lesson.Words = await GetWords(updateDto.WordIds);
+            lesson.Name = updateDto.Name;
+            lesson.UpdatedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
 
             return NoContent();
         }
 
+        /// <summary>
+        /// Deletes a specific lesson.
+        /// </summary>
+        /// <param name="id">The ID of the lesson to delete.</param>
+        /// <returns>No content if successful.</returns>
+        /// <example>
+        /// DELETE /api/Lesson/5
+        /// </example>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLesson(int id)
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var lesson = await context.Lessons
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+            var lesson = await GetLessonOfUser(id, user.Id);
 
             if (lesson == null)
             {
@@ -204,79 +205,21 @@ namespace BE.Controllers
             }
 
             context.Lessons.Remove(lesson);
-            await context.SaveChangesAsync();
-
-            return NoContent();
+            await context.SaveChangesAsync(); return NoContent();
         }
-        [HttpPost("{id}/words")]
-        public async Task<IActionResult> AssignWords(int id, AssignWordsDto assignDto)
+
+        private async Task<Lesson?> GetLessonOfUser(int lessonId, int userId)
         {
-            var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-
-            var lesson = await context.Lessons
+            return await context.Lessons
                 .Include(l => l.Words)
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
+                .FirstOrDefaultAsync(l => l.Id == lessonId && l.UserId == userId);
+        }
 
-            if (lesson == null)
-            {
-                return NotFound();
-            }
-
-            var words = await context.Words
-                .Where(w => assignDto.WordIds.Contains(w.Id))
+        private async Task<List<Word>> GetWords(List<int> wordIds)
+        {
+            return await context.Words
+                .Where(w => wordIds.Contains(w.Id))
                 .ToListAsync();
-
-            foreach (var word in words)
-            {
-                // Check if lesson already has this word
-                if (!lesson.Words.Any(w => w.Id == word.Id))
-                {
-                    lesson.Words.Add(word);
-                }
-            }
-
-            lesson.UpdatedAt = DateTime.UtcNow;
-            await context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id}/words")]
-        public async Task<IActionResult> RemoveWords(int id, AssignWordsDto removeDto)
-        {
-            var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-
-            var lesson = await context.Lessons
-                .Include(l => l.Words)
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
-
-            if (lesson == null)
-            {
-                return NotFound();
-            }
-
-            // Find words to remove
-            var wordsToRemove = lesson.Words
-                .Where(w => removeDto.WordIds.Contains(w.Id))
-                .ToList();
-
-            if (!wordsToRemove.Any())
-            {
-                return NotFound();
-            }
-
-            // Remove words from the relationship
-            foreach (var word in wordsToRemove)
-            {
-                lesson.Words.Remove(word);
-            }
-
-            lesson.UpdatedAt = DateTime.UtcNow;
-            await context.SaveChangesAsync();
-
-            return NoContent();
         }
     }
 }

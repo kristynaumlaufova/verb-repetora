@@ -3,9 +3,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Lesson, lessonService } from '../services/lessonService';
 
 export const useLessonManager = () => {
-  const { currentLanguage } = useLanguage();
-  const [lessons, setLessons] = useState<Lesson[]>([]);  const [isLoading, setIsLoading] = useState(true);
+  const [lessons, setLessons] = useState<Lesson[]>([]);  
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const { currentLanguage } = useLanguage();
 
   const loadLessons = useCallback(async () => {
     if (!currentLanguage) return;
@@ -19,6 +21,7 @@ export const useLessonManager = () => {
       setError('Failed to load lessons');
     }
   }, [currentLanguage]);
+
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {

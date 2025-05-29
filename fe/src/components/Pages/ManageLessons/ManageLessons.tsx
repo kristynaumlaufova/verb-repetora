@@ -28,6 +28,7 @@ const ManageLessons: React.FC = () => {
       refreshData();
     }
   }, [currentLanguage, refreshData]);
+
   const handleCreateOrUpdate = async (
     name: string,
     selectedWordIds?: number[]
@@ -35,14 +36,12 @@ const ManageLessons: React.FC = () => {
     let success = false;
 
     if (editingLesson) {
-      // Update existing lesson
       success = await updateLesson(
         editingLesson.id,
         name,
         selectedWordIds || []
       );
     } else {
-      // Create new lesson
       const lessonId = await createLesson(name, selectedWordIds);
       success = !!lessonId;
     }
@@ -77,7 +76,6 @@ const ManageLessons: React.FC = () => {
     setEditingLesson(null);
     setError("");
   };
-  if (!currentLanguage) return <div>Please select a language</div>;
 
   return (
     <div className={pageStyles.container}>
