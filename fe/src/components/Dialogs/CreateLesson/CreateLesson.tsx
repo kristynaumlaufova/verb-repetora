@@ -29,9 +29,10 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
   const [selectedWords, setSelectedWords] = useState<Word[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
-  const { words, refreshWords } = useWordManager(currentLanguage?.id);
+  const { words, refreshWords, getWordsByIds } = useWordManager(
+    currentLanguage?.id
+  );
   const { wordTypes } = useWordTypeManager(currentLanguage?.id);
   useClickOutside(modalRef, onClose);
 
@@ -46,28 +47,34 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
   useEffect(() => {
     if (isOpen) {
       setLessonName(initialValue?.name || "");
-      inputRef.current?.focus();
-      setSelectedWords([]);
-      if (currentLanguage?.id) {
-        refreshWords();
-      }
+      refreshWords();
     } else {
       resetDialogState();
     }
-  }, [isOpen, initialValue, currentLanguage?.id, refreshWords]);
-
+  }, [isOpen, initialValue, refreshWords]);
   // Load words of current lesson
   useEffect(() => {
-    if (isOpen && initialValue && initialValue.wordIds && words.length > 0) {
-      const selectedWordObjects = words.filter((word) =>
-        initialValue.wordIds.includes(word.id)
-      );
-
-      if (selectedWordObjects.length > 0) {
-        setSelectedWords(selectedWordObjects);
+    const fetchSelectedWords = async () => {
+      if (
+        isOpen &&
+        initialValue &&
+        initialValue.wordIds &&
+        initialValue.wordIds.length > 0
+      ) {
+        try {
+          const fetchedWords = await getWordsByIds(initialValue.wordIds);
+          if (fetchedWords && fetchedWords.length > 0) {
+            setSelectedWords(fetchedWords);
+          }
+        } catch (error) {
+          console.error("Error fetching words by IDs:", error);
+        }
       }
-    }
-  }, [isOpen, initialValue, words]);
+    };
+
+    fetchSelectedWords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialValue]);
 
   // Search logic
   useEffect(() => {
@@ -109,6 +116,10 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     const selectedWordIds = selectedWords.map((word) => word.id);
     await onCreateLesson(lessonName.trim(), selectedWordIds);
   };
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    refreshWords(e.target.value);
+  };
 
   const handleWordSelect = (word: Word) => {
     if (selectedWords.some((w) => w.id === word.id)) {
@@ -138,7 +149,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
               <label htmlFor="lessonName">Name</label>
               <input
                 id="lessonName"
-                ref={inputRef}
                 type="text"
                 value={lessonName}
                 onChange={(e) => setLessonName(e.target.value)}
@@ -150,23 +160,21 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
           </div>
 
           <div className={styles.wordsSection}>
-            {" "}
             <label>Add Words</label>
             <div className={styles.searchContainer}>
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
                 className={styles.searchInput}
                 placeholder="Search for words..."
-              />
-              {words.length === 0 && (
+              />{" "}
+              {!currentLanguage?.id && (
                 <div className={styles.noResults}>
-                  No words available for the current language. Please add words
-                  first.
+                  Please select a language first.
                 </div>
               )}
-              {searchTerm.trim() !== "" && words.length > 0 && (
+              {searchTerm.trim() !== "" && (
                 <div className={styles.searchResults}>
                   {isSearching ? (
                     <div className={styles.loadingIndicator}>Loading...</div>

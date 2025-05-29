@@ -271,6 +271,47 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         return NoContent();
     }
 
+    /// <summary>
+    /// Retrieves words by their IDs.
+    /// </summary>
+    /// <param name="wordIds">The IDs of the words to retrieve.</param>
+    /// <returns>A list of words matching the provided IDs.</returns>
+    /// <example>
+    /// POST /api/Word/byIds
+    /// [1, 2, 3]
+    /// </example>
+    [Route("byIds")]
+    [HttpPost]
+    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[] wordIds)
+    {
+        if (wordIds == null || wordIds.Length == 0)
+        {
+            return Ok(new List<WordDto>());
+        }
+
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var words = await context.Words
+            .Include(w => w.Language)
+            .Include(w => w.WordType)
+            .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id)
+            .ToListAsync();
+
+        var wordDtos = words.Select(word => new WordDto(
+            word.Id,
+            word.WordTypeId,
+            word.LanguageId,
+            word.Keyword,
+            word.Fields
+        )).ToList();
+
+        return Ok(wordDtos);
+    }
+
     private bool WordExists(int id)
     {
         return context.Words.Any(e => e.Id == id);

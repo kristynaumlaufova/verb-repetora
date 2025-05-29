@@ -1,0 +1,261 @@
+.reviewContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.reviewHeader {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.progressInfo {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: var(--main);
+  transition: width 0.3s ease;
+}
+
+.wordCard {
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.wordKeyword {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.wordType {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.wordDetails {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.fieldDetail {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.incorrectField {
+  color: var(--danger-dark);
+  font-weight: bold;
+  background-color: var(--danger-light);
+}
+
+.form {
+  margin-top: 2rem;
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.inputGroup label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.inputGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  outline: none;
+}
+
+.inputGroup input:focus {
+  border-color: var(--accent-1);
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: space-between;
+}
+
+.checkButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: var(--main);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.3s ease;
+}
+
+.checkButton:hover {
+  background-color: var(--accent-1);
+}
+
+.giveUpButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: var(--text-secondary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.3s ease;
+}
+
+.giveUpButton:hover {
+  background-color: var(--danger-dark);
+  color: var(--bg-primary);
+}
+
+.nextButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: var(--accent-1);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+  margin: 0 2rem;
+}
+
+.feedbackCorrect {
+  padding: 1rem;
+  background-color: #d4edda;
+  color: #155724;
+  border-radius: 4px;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.feedbackIncorrect {
+  padding: 1rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 4px;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.summaryContainer {
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.summaryTitle {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--text);
+}
+
+.summaryStats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 2rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statValue {
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.statLabel {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.correct {
+  color: var(--success-dark);
+}
+
+.incorrect {
+  color: var(--danger-dark);
+}
+
+.total {
+  color: var(--text);
+}
+
+.finishButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: var(--main);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 2rem;
+}
+
+.yourAnswer{
+  font-size: 1rem;
+  color: var(--danger-dark);
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+}

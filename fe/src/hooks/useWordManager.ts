@@ -133,10 +133,27 @@ export const useWordManager = (langId: number | undefined) => {
     } catch (error: any) {
       setError(
         error.response?.data || "An error occurred while deleting the word"
-      );
+      );      
+      
       return false;
     }
   };
+  
+  const getWordsByIds = async (wordIds: number[]): Promise<Word[]> => {
+    if (!wordIds || wordIds.length === 0) {
+      return [];
+    }
+    
+    try {
+      return await wordService.getWordsByIds(wordIds);
+    } catch (error: any) {
+      setError(
+        error.response?.data || "An error occurred while fetching words by IDs"
+      );
+      return [];
+    }
+  };
+  
   return {
     words,
     isLoading,
@@ -147,6 +164,7 @@ export const useWordManager = (langId: number | undefined) => {
     createWord,
     updateWord,
     deleteWord,
+    getWordsByIds,
     setError,
     searchTerm,
     setSearchTerm,

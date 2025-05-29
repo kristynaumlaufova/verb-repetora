@@ -71,6 +71,7 @@ const Vocabulary: React.FC = () => {
       handleModalClose();
     }
   };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -88,18 +89,6 @@ const Vocabulary: React.FC = () => {
       refreshWords(value);
       setIsSearching(false);
     }, 600);
-  };
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-      if (searchTerm.trim().length > 0) {
-        setIsSearching(true);
-      }
-      refreshWords(searchTerm);
-      setIsSearching(false);
-    }
   };
 
   useEffect(() => {
@@ -131,8 +120,7 @@ const Vocabulary: React.FC = () => {
           className={styles.searchInput}
           value={searchTerm}
           onChange={handleSearch}
-          onKeyDown={handleSearchKeyDown}
-        />{" "}
+        />
         {searchTerm && (
           <button
             className={styles.clearButton}
@@ -146,7 +134,7 @@ const Vocabulary: React.FC = () => {
           >
             <i className="bi bi-x"></i>
           </button>
-        )}{" "}
+        )}
         <button
           className={styles.searchButton}
           onClick={() => {
@@ -160,7 +148,7 @@ const Vocabulary: React.FC = () => {
         >
           <i className="bi bi-search"></i>
         </button>
-      </div>{" "}
+      </div>
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
           {isLoading || isSearching ? (

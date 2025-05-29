@@ -7,8 +7,10 @@ import styles from "./Lessons.module.css";
 import LessonItem from "./LessonItem";
 import CreateLesson from "../../Dialogs/CreateLesson/CreateLesson";
 import DeleteConfirmation from "../../Dialogs/DeleteConfirmation/DeleteConfirmation";
+import { useNavigate } from "react-router-dom";
 
 const Lessons: React.FC = () => {
+  const navigate = useNavigate();
   const { currentLanguage } = useLanguage();
   const {
     lessons,
@@ -83,16 +85,29 @@ const Lessons: React.FC = () => {
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
-
-      <h1 className={pageStyles.title}>Lessons</h1>
-
+      <h1 className={pageStyles.title}>Lessons</h1>{" "}
       <div className={styles.buttonGroup}>
-        <button className={styles.reviewRecommandedButton}>
-          Review recommanded
+        <button
+          className={styles.reviewRecommandedButton}
+          onClick={() =>
+            navigate("/review", { state: { type: "recommended" } })
+          }
+          disabled={selectedLessons.length === 0}
+        >
+          Review recommended
         </button>
-        <button className={styles.reviewAllButton}>Review all</button>
+        <button
+          className={styles.reviewAllButton}
+          onClick={() =>
+            navigate("/review", {
+              state: { lessonIds: selectedLessons, type: "all" },
+            })
+          }
+          disabled={selectedLessons.length === 0}
+        >
+          Review all
+        </button>
       </div>
-
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
           {isLoading ? (
@@ -120,14 +135,12 @@ const Lessons: React.FC = () => {
           <i className="bi bi-plus"></i>
         </button>
       </div>
-
       <CreateLesson
         isOpen={isCreateModalOpen}
         onClose={handleModalClose}
         onCreateLesson={handleCreateOrUpdate}
         initialValue={editingLesson}
       />
-
       <DeleteConfirmation
         isOpen={!!deletingLesson}
         onClose={() => {

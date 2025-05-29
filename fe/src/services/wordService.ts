@@ -70,8 +70,15 @@ export const wordService = {
     const response = await apiClient.put(`/Word/${id}`, word);
     return response.data;
   },
-
   deleteWord: async (id: number): Promise<void> => {
     await apiClient.delete(`/Word/${id}`);
+  },
+  
+  getWordsByIds: async (wordIds: number[]): Promise<WordDto[]> => {
+    if (!wordIds || wordIds.length === 0) {
+      return [];
+    }
+    const response = await apiClient.post("/Word/byIds", wordIds);
+    return response.data;
   }
 };
