@@ -19,5 +19,7 @@ public class Word
     // Navigation properties
     public WordType WordType { get; set; } = null!;
     public Language Language { get; set; } = null!;
-    public ICollection<WordInLesson> WordInLessons { get; set; } = [];
+
+    // Skip navigation property for many-to-many relationship
+    public ICollection<Lesson> Lessons { get; set; } = [];
 }

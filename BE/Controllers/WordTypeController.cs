@@ -242,9 +242,14 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         return await context.Languages
             .FirstOrDefaultAsync(l => l.Id == langId) != null;
     }
-
     private async Task<bool> IsNameColision(int langId, string name)
     {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return false;
+        }
+
         return await context.WordTypes
             .FirstOrDefaultAsync(wt =>
                 wt.LangId == langId

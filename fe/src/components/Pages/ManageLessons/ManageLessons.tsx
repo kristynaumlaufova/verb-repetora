@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { useLessonManager } from "../../../hooks/useLessonManager";
-import { Lesson } from "../../../services/lessonService";
+import { Lesson, lessonService } from "../../../services/lessonService";
 import pageStyles from "../Pages.module.css";
 import LessonItem from "./LessonItem";
 import CreateLesson from "../../Dialogs/CreateLesson/CreateLesson";
@@ -53,9 +53,14 @@ const ManageLessons: React.FC = () => {
     }
   };
 
-  const handleEdit = (lesson: Lesson) => {
-    setEditingLesson(lesson);
-    setIsCreateModalOpen(true);
+  const handleEdit = async (lesson: Lesson) => {
+    try {
+      const lessonData = await lessonService.getLesson(lesson.id);
+      setEditingLesson(lessonData);
+      setIsCreateModalOpen(true);
+    } catch (error) {
+      setError("Failed to load lesson details for editing");
+    }
   };
 
   const handleDelete = async () => {

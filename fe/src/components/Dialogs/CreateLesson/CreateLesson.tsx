@@ -33,47 +33,73 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const { words, refreshWords } = useWordManager(currentLanguage?.id);
   const { wordTypes } = useWordTypeManager(currentLanguage?.id);
-
   useClickOutside(modalRef, onClose);
-  // Refresh words when the modal opens
+
+  const resetDialogState = () => {
+    setLessonName("");
+    setSearchTerm("");
+    setSearchResults([]);
+    setSelectedWords([]);
+  };
+
   useEffect(() => {
-    if (isOpen && currentLanguage?.id) {
-      refreshWords();
+    if (!isOpen) {
+      resetDialogState();
     }
-  }, [isOpen, currentLanguage?.id, refreshWords]);  // Handle form initialization when dialog opens
+  }, [isOpen]);
+  // Dialog initialization
   useEffect(() => {
     if (isOpen) {
-      // Set the lesson name
+      console.log("Dialog opened, initialValue:", initialValue);
+      console.log("Full initialValue object:", JSON.stringify(initialValue));
+      
       setLessonName(initialValue?.name || "");
       inputRef.current?.focus();
+      setSelectedWords([]);
       
-      // Clear selection if not editing
-      if (!initialValue) {
-        setSelectedWords([]);
+      if (currentLanguage?.id) {
+        console.log("Refreshing words for language:", currentLanguage.id);
+        refreshWords();
+      }
+      
+      // Check if wordIds exists and log its type
+      if (initialValue) {
+        console.log("InitialValue has wordIds:", initialValue.wordIds);
+        console.log("Type of wordIds:", typeof initialValue.wordIds);
+        if (Array.isArray(initialValue.wordIds)) {
+          console.log("wordIds is an array with length:", initialValue.wordIds.length);
+        }
       }
     }
-  }, [isOpen, initialValue]);
-  // Handle selected words initialization/update when words load or initialValue changes
+  }, [isOpen, initialValue, currentLanguage?.id, refreshWords]);
+
+
   useEffect(() => {
-    if (isOpen && initialValue?.wordIds && words.length > 0) {
-      // Find word objects for the selected wordIds
-      const selectedWordObjects = words.filter(word => 
+    if (isOpen && initialValue && initialValue.wordIds && words.length > 0) {
+      console.log("Setting selected words for lesson:", {
+        lessonId: initialValue.id,
+        lessonName: initialValue.name,
+        wordIds: initialValue.wordIds,
+      });
+
+      const selectedWordObjects = words.filter((word) =>
         initialValue.wordIds.includes(word.id)
       );
 
-      console.log('Loading words for editing:', {
-        wordIds: initialValue.wordIds,
-        words: selectedWordObjects.map(w => ({
-          id: w.id,
-          keyword: w.keyword
-        })),
+      console.log("Found matching words:", {
         found: selectedWordObjects.length,
-        total: words.length
+        words: selectedWordObjects.map((w) => ({
+          id: w.id,
+          keyword: w.keyword,
+        })),
+        total: words.length,
       });
 
-      setSelectedWords(selectedWordObjects);
+      if (selectedWordObjects.length > 0) {
+        setSelectedWords(selectedWordObjects);
+      }
     }
-  }, [isOpen, initialValue?.wordIds, words]);
+  }, [isOpen, initialValue, words]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -178,7 +204,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
                   first.
                 </div>
               )}
-
               {searchTerm.trim() !== "" && words.length > 0 && (
                 <div className={styles.searchResults}>
                   {isSearching ? (
@@ -207,24 +232,21 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
                     })
                   )}
                 </div>
-              )}            </div>
+              )}{" "}
+            </div>
             <div className={styles.selectedWordsContainer}>
               <div className={styles.selectedWordsHeader}>
                 Selected Words ({selectedWords.length})
               </div>
               <div className={styles.selectedWordsList}>
                 {selectedWords.map((word) => {
-                  console.log('Rendering word:', word);
+                  console.log("Rendering word:", word);
                   const wordType = getWordType(word.wordTypeId);
                   return (
                     <div key={word.id} className={styles.selectedWordItem}>
-                      <span className={styles.wordKeyword}>
-                        {word.keyword}
-                      </span>
+                      <span className={styles.wordKeyword}>{word.keyword}</span>
                       {wordType && (
-                        <span className={styles.wordType}>
-                          {wordType.name}
-                        </span>
+                        <span className={styles.wordType}>{wordType.name}</span>
                       )}
                       <button
                         type="button"

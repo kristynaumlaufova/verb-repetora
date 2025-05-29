@@ -12,7 +12,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Lesson> Lessons { get; set; }
     public DbSet<WordType> WordTypes { get; set; }
     public DbSet<Word> Words { get; set; }
-    public DbSet<WordInLesson> WordInLessons { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,10 +24,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         modelBuilder.Entity<Lesson>()
             .HasIndex(l => l.Name)
-            .IsUnique();
-
-        modelBuilder.Entity<WordType>()
-            .HasIndex(wt => wt.Name)
+            .IsUnique(); modelBuilder.Entity<WordType>()
+            .HasIndex(wt => new { wt.LangId, wt.Name })
             .IsUnique();
 
         // Configure cascade delete for Language relationships
@@ -57,11 +54,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(w => w.WordTypeId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Configure cascade delete for Word->WordInLesson relationship
-        modelBuilder.Entity<Word>()
-            .HasMany(w => w.WordInLessons)
-            .WithOne(wl => wl.Word)
-            .HasForeignKey(wl => wl.WordId)
-            .OnDelete(DeleteBehavior.Cascade);
+        // Configure the many-to-many relationship between Lesson and Word
+        modelBuilder.Entity<Lesson>()
+            .HasMany(l => l.Words)
+            .WithMany(w => w.Lessons);
     }
 }

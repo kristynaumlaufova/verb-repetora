@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250529092522_FixWordTypeRelationship")]
-    partial class FixWordTypeRelationship
+    [Migration("20250529134305_UpdateWordTypeUniqueConstraint")]
+    partial class UpdateWordTypeUniqueConstraint
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -187,47 +187,13 @@ namespace BE.Migrations
                     b.Property<int>("WordTypeId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("WordTypeId1")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("LanguageId");
 
                     b.HasIndex("WordTypeId");
 
-                    b.HasIndex("WordTypeId1");
-
                     b.ToTable("Words");
-                });
-
-            modelBuilder.Entity("BE.Models.WordInLesson", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("LessonId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("WordId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LessonId");
-
-                    b.HasIndex("WordId");
-
-                    b.ToTable("WordInLessons");
                 });
 
             modelBuilder.Entity("BE.Models.WordType", b =>
@@ -254,12 +220,25 @@ namespace BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LangId");
-
-                    b.HasIndex("Name")
+                    b.HasIndex("LangId", "Name")
                         .IsUnique();
 
                     b.ToTable("WordTypes");
+                });
+
+            modelBuilder.Entity("LessonWord", b =>
+                {
+                    b.Property<int>("LessonsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WordsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("LessonsId", "WordsId");
+
+                    b.HasIndex("WordsId");
+
+                    b.ToTable("LessonWord");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
@@ -433,37 +412,14 @@ namespace BE.Migrations
                         .IsRequired();
 
                     b.HasOne("BE.Models.WordType", "WordType")
-                        .WithMany()
+                        .WithMany("Words")
                         .HasForeignKey("WordTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BE.Models.WordType", null)
-                        .WithMany("Words")
-                        .HasForeignKey("WordTypeId1");
-
                     b.Navigation("Language");
 
                     b.Navigation("WordType");
-                });
-
-            modelBuilder.Entity("BE.Models.WordInLesson", b =>
-                {
-                    b.HasOne("BE.Models.Lesson", "Lesson")
-                        .WithMany("WordInLessons")
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BE.Models.Word", "Word")
-                        .WithMany("WordInLessons")
-                        .HasForeignKey("WordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Lesson");
-
-                    b.Navigation("Word");
                 });
 
             modelBuilder.Entity("BE.Models.WordType", b =>
@@ -475,6 +431,21 @@ namespace BE.Migrations
                         .IsRequired();
 
                     b.Navigation("Language");
+                });
+
+            modelBuilder.Entity("LessonWord", b =>
+                {
+                    b.HasOne("BE.Models.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BE.Models.Word", null)
+                        .WithMany()
+                        .HasForeignKey("WordsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -542,16 +513,6 @@ namespace BE.Migrations
                     b.Navigation("WordTypes");
 
                     b.Navigation("Words");
-                });
-
-            modelBuilder.Entity("BE.Models.Lesson", b =>
-                {
-                    b.Navigation("WordInLessons");
-                });
-
-            modelBuilder.Entity("BE.Models.Word", b =>
-                {
-                    b.Navigation("WordInLessons");
                 });
 
             modelBuilder.Entity("BE.Models.WordType", b =>

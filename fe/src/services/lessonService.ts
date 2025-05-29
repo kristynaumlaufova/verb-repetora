@@ -39,6 +39,7 @@ class LessonService {
     });
     return response.data;
   }
+  
   async createLesson(
     name: string,
     languageId: number,
@@ -62,9 +63,13 @@ class LessonService {
       wordIds 
     });
   }
-
   async deleteLesson(id: number): Promise<void> {
     await apiClient.delete(`/Lesson/${id}`);
+  }
+
+  async getLesson(id: number): Promise<Lesson> {
+    const response = await apiClient.get(`/Lesson/${id}`);
+    return response.data;
   }
 }
 

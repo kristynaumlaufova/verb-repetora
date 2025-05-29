@@ -193,35 +193,6 @@ namespace BE.Migrations
                     b.ToTable("Words");
                 });
 
-            modelBuilder.Entity("BE.Models.WordInLesson", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("LessonId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("WordId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LessonId");
-
-                    b.HasIndex("WordId");
-
-                    b.ToTable("WordInLessons");
-                });
-
             modelBuilder.Entity("BE.Models.WordType", b =>
                 {
                     b.Property<int>("Id")
@@ -246,12 +217,25 @@ namespace BE.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LangId");
-
-                    b.HasIndex("Name")
+                    b.HasIndex("LangId", "Name")
                         .IsUnique();
 
                     b.ToTable("WordTypes");
+                });
+
+            modelBuilder.Entity("LessonWord", b =>
+                {
+                    b.Property<int>("LessonsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WordsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("LessonsId", "WordsId");
+
+                    b.HasIndex("WordsId");
+
+                    b.ToTable("LessonWord");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
@@ -435,25 +419,6 @@ namespace BE.Migrations
                     b.Navigation("WordType");
                 });
 
-            modelBuilder.Entity("BE.Models.WordInLesson", b =>
-                {
-                    b.HasOne("BE.Models.Lesson", "Lesson")
-                        .WithMany("WordInLessons")
-                        .HasForeignKey("LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BE.Models.Word", "Word")
-                        .WithMany("WordInLessons")
-                        .HasForeignKey("WordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Lesson");
-
-                    b.Navigation("Word");
-                });
-
             modelBuilder.Entity("BE.Models.WordType", b =>
                 {
                     b.HasOne("BE.Models.Language", "Language")
@@ -463,6 +428,21 @@ namespace BE.Migrations
                         .IsRequired();
 
                     b.Navigation("Language");
+                });
+
+            modelBuilder.Entity("LessonWord", b =>
+                {
+                    b.HasOne("BE.Models.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BE.Models.Word", null)
+                        .WithMany()
+                        .HasForeignKey("WordsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -530,16 +510,6 @@ namespace BE.Migrations
                     b.Navigation("WordTypes");
 
                     b.Navigation("Words");
-                });
-
-            modelBuilder.Entity("BE.Models.Lesson", b =>
-                {
-                    b.Navigation("WordInLessons");
-                });
-
-            modelBuilder.Entity("BE.Models.Word", b =>
-                {
-                    b.Navigation("WordInLessons");
                 });
 
             modelBuilder.Entity("BE.Models.WordType", b =>

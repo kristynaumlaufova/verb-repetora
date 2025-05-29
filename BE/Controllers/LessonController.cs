@@ -43,8 +43,9 @@ namespace BE.Controllers
             else
             {
                 query = query.OrderBy(l => l.Name);
-            }            var items = await query
-                .Include(l => l.WordInLessons)
+            }
+            var items = await query
+                .Include(l => l.Words)
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
                 .Select(l => new LessonDto
@@ -52,19 +53,23 @@ namespace BE.Controllers
                     Id = l.Id,
                     Name = l.Name,
                     LanguageId = l.LangId,
-                    WordIds = l.WordInLessons.Select(wl => wl.WordId).ToList()
+                    WordIds = l.Words.Select(w => w.Id).ToList()
                 })
                 .ToListAsync();
 
             return Ok(new PaginatedResponse<LessonDto>(items, totalCount, parameters.PageNumber, parameters.PageSize));
         }
 
+
+
         [HttpGet("{id}")]
         public async Task<ActionResult<LessonDto>> GetLesson(int id)
         {
             var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized(); var lesson = await context.Lessons
-                .Include(l => l.WordInLessons)
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .Include(l => l.Words)
                 .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
             if (lesson == null)
@@ -77,7 +82,7 @@ namespace BE.Controllers
                 Id = lesson.Id,
                 Name = lesson.Name,
                 LanguageId = lesson.LangId,
-                WordIds = lesson.WordInLessons.Select(wl => wl.WordId).ToList()
+                WordIds = lesson.Words.Select(wl => wl.Id).ToList()
             };
         }
         [HttpPost]
@@ -103,12 +108,7 @@ namespace BE.Controllers
 
                 foreach (var word in words)
                 {
-                    lesson.WordInLessons.Add(new WordInLesson
-                    {
-                        WordId = word.Id,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    });
+                    lesson.Words.Add(word);
                 }
             }
 
@@ -120,7 +120,7 @@ namespace BE.Controllers
                 Id = lesson.Id,
                 Name = lesson.Name,
                 LanguageId = lesson.LangId,
-                WordIds = lesson.WordInLessons.Select(wl => wl.WordId).ToList()
+                WordIds = lesson.Words.Select(w => w.Id).ToList()
             });
         }
 
@@ -128,8 +128,10 @@ namespace BE.Controllers
         public async Task<IActionResult> UpdateLesson(int id, UpdateLessonDto updateDto)
         {
             var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized(); var lesson = await context.Lessons
-                .Include(l => l.WordInLessons)
+            if (user == null) return Unauthorized();
+
+            var lesson = await context.Lessons
+                .Include(l => l.Words)
                 .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
             if (lesson == null)
@@ -147,18 +149,20 @@ namespace BE.Controllers
             }
 
             // Update word assignments
-            var currentWordIds = lesson.WordInLessons.Select(w => w.WordId).ToHashSet();
+            var currentWordIds = lesson.Words.Select(w => w.Id).ToHashSet();
             var newWordIds = updateDto.WordIds.ToHashSet();
 
+            // Get all current words as a collection to modify
+            var currentWords = new List<Word>(lesson.Words);
+
             // Remove words that are no longer in the list
-            var wordsToRemove = lesson.WordInLessons.Where(wl => !newWordIds.Contains(wl.WordId)).ToList();
-            if (wordsToRemove.Any())
+            foreach (var word in currentWords)
             {
-                foreach (var wordInLesson in wordsToRemove)
+                if (!newWordIds.Contains(word.Id))
                 {
-                    lesson.WordInLessons.Remove(wordInLesson);
+                    lesson.Words.Remove(word);
+                    shouldUpdate = true;
                 }
-                shouldUpdate = true;
             }
 
             // Add new words
@@ -171,12 +175,7 @@ namespace BE.Controllers
 
                 foreach (var word in words)
                 {
-                    lesson.WordInLessons.Add(new WordInLesson
-                    {
-                        WordId = word.Id,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    });
+                    lesson.Words.Add(word);
                 }
                 shouldUpdate = true;
             }
@@ -209,7 +208,6 @@ namespace BE.Controllers
 
             return NoContent();
         }
-
         [HttpPost("{id}/words")]
         public async Task<IActionResult> AssignWords(int id, AssignWordsDto assignDto)
         {
@@ -217,7 +215,7 @@ namespace BE.Controllers
             if (user == null) return Unauthorized();
 
             var lesson = await context.Lessons
-                .Include(l => l.WordInLessons)
+                .Include(l => l.Words)
                 .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
             if (lesson == null)
@@ -231,15 +229,10 @@ namespace BE.Controllers
 
             foreach (var word in words)
             {
-                if (!lesson.WordInLessons.Any(wl => wl.WordId == word.Id))
+                // Check if lesson already has this word
+                if (!lesson.Words.Any(w => w.Id == word.Id))
                 {
-                    lesson.WordInLessons.Add(new WordInLesson
-                    {
-                        LessonId = id,
-                        WordId = word.Id,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    });
+                    lesson.Words.Add(word);
                 }
             }
 
@@ -256,6 +249,7 @@ namespace BE.Controllers
             if (user == null) return Unauthorized();
 
             var lesson = await context.Lessons
+                .Include(l => l.Words)
                 .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
             if (lesson == null)
@@ -263,16 +257,22 @@ namespace BE.Controllers
                 return NotFound();
             }
 
-            var wordsInLesson = await context.Set<WordInLesson>()
-                .Where(wl => wl.LessonId == id && removeDto.WordIds.Contains(wl.WordId))
-                .ToListAsync();
+            // Find words to remove
+            var wordsToRemove = lesson.Words
+                .Where(w => removeDto.WordIds.Contains(w.Id))
+                .ToList();
 
-            if (!wordsInLesson.Any())
+            if (!wordsToRemove.Any())
             {
                 return NotFound();
             }
 
-            context.Set<WordInLesson>().RemoveRange(wordsInLesson);
+            // Remove words from the relationship
+            foreach (var word in wordsToRemove)
+            {
+                lesson.Words.Remove(word);
+            }
+
             lesson.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 

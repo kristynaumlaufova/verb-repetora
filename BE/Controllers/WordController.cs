@@ -19,7 +19,8 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
 {
     /// <summary>
     /// Retrieves all words from the database.
-    /// </summary>    /// <returns>A paginated list of words.</returns>
+    /// </summary>    
+    /// <returns>A paginated list of words.</returns>
     /// <example>
     /// GET /api/Word?langId=1&pageNumber=1&pageSize=10&searchTerm=text&sortBy=keyword&sortDescending=false
     /// </example>

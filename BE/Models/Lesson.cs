@@ -22,5 +22,7 @@ public class Lesson
     // Navigation properties
     public Language Language { get; set; } = null!;
     public AppUser User { get; set; } = null!;
-    public ICollection<WordInLesson> WordInLessons { get; set; } = [];
+
+    // Skip navigation property for many-to-many relationship
+    public ICollection<Word> Words { get; set; } = [];
 }
