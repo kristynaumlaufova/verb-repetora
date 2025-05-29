@@ -84,13 +84,13 @@
   height: 48px;
   border-radius: 50%;
   background-color: var(--main);
-  color: white;
+  color: var(--bg-primary);
   border: none;
   cursor: pointer;
 }
 
 .addButton:hover {
-  background-color: var(--main-dark);
+  background-color: var(--accent-1);
 }
 
 .editButton {

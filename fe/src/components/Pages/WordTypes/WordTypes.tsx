@@ -7,7 +7,7 @@ import { useWordTypeManager } from "../../../hooks/useWordTypeManager";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import WordTypeItem from "./WordTypeItem";
 
-const ManageWordTypes: React.FC = () => {
+const WordTypes: React.FC = () => {
   const { currentLanguage } = useLanguage();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [deletingWordType, setDeletingWordType] = useState<WordType | null>(
@@ -123,4 +123,4 @@ const ManageWordTypes: React.FC = () => {
   );
 };
 
-export default ManageWordTypes;
+export default WordTypes;

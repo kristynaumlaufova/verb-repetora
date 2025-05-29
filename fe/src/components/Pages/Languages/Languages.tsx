@@ -6,7 +6,7 @@ import { languageService, Language } from "../../../services/languageService";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import LanguageItem from "./LanguageItem";
 
-const ManageLanguages: React.FC = () => {
+const Languages: React.FC = () => {
   const {
     languages,
     totalCount,
@@ -146,4 +146,4 @@ const ManageLanguages: React.FC = () => {
   );
 };
 
-export default ManageLanguages;
+export default Languages;

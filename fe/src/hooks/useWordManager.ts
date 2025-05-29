@@ -19,7 +19,6 @@ export const useWordManager = (langId: number | undefined) => {
   const refreshWords = useCallback(async (search?: string) => {
     if (!langId) return;
 
-    console.log("Refreshing words for language ID:", langId);
     setIsLoading(true);
     setError("");
 
@@ -33,7 +32,6 @@ export const useWordManager = (langId: number | undefined) => {
         searchTerm: searchQuery,
       });
 
-      console.log("Fetched words:", response.items.length);
       setWords(response.items);
       setTotalCount(response.totalCount);
       setCurrentPage(1);
@@ -44,7 +42,6 @@ export const useWordManager = (langId: number | undefined) => {
       setError(
         error.response?.data || "An error occurred while fetching words"
       );
-      console.error("Failed to fetch words:", error);
     } finally {
       setIsLoading(false);
     }

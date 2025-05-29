@@ -10,7 +10,7 @@ import { useWordManager } from "../../../hooks/useWordManager";
 import { useWordTypeManager } from "../../../hooks/useWordTypeManager";
 import { useLanguage } from "../../../contexts/LanguageContext";
 
-const ManageWords: React.FC = () => {
+const Vocabulary: React.FC = () => {
   const { currentLanguage } = useLanguage();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
@@ -231,4 +231,4 @@ const ManageWords: React.FC = () => {
   );
 };
 
-export default ManageWords;
+export default Vocabulary;

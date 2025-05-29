@@ -6,6 +6,7 @@ export const useLessonManager = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedLessons, setSelectedLessons] = useState<number[]>([]);
 
   const { currentLanguage } = useLanguage();
 
@@ -72,6 +73,17 @@ export const useLessonManager = () => {
       return false;
     }
   }, [loadLessons]);
+
+  const toggleLessonSelection = useCallback((lessonId: number) => {
+    setSelectedLessons((prevSelected) => {
+      if (prevSelected.includes(lessonId)) {
+        return prevSelected.filter(id => id !== lessonId);
+      } else {
+        return [...prevSelected, lessonId];
+      }
+    });
+  }, []);
+
   return {
     lessons,
     isLoading,
@@ -81,5 +93,7 @@ export const useLessonManager = () => {
     createLesson,
     updateLesson,
     deleteLesson,
+    selectedLessons,
+    toggleLessonSelection
   };
 };
