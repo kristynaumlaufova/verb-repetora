@@ -59,4 +59,137 @@
 }
 
 .inputGroup input:focus {
-    border-color: var(--accent-1); }
+    border-color: var(--accent-1);
+}
+
+.wordsSection {
+    margin-bottom: 1.5rem;
+}
+
+.wordsSection label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+
+.searchContainer {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    outline: none;
+}
+
+.searchInput:focus {
+    border-color: var(--accent-1);
+}
+
+.searchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.wordItem {
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wordItem:last-child {
+    border-bottom: none;
+}
+
+.wordItem:hover {
+    background-color: var(--bg-secondary);
+}
+
+.wordKeyword {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.wordType {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+}
+
+.loadingIndicator, .noResults {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.loadingIndicator {
+    color: var(--text-secondary);
+}
+
+.noResults {
+    color: var(--danger-dark);
+}
+
+.selectedWordsContainer {
+    margin-top: 1rem;
+    border: 1px solid var(--main-light);
+    border-radius: 4px;
+}
+
+.selectedWordsHeader {
+    padding: 0.5rem;
+    background-color: var(--main-light);
+    font-weight: 500;
+    color: var(--text);
+}
+
+.selectedWordsList {
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.selectedWordItem {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    gap: 0.5rem;
+}
+
+.removeWordButton {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.removeWordButton:hover {
+    color: var(--danger-dark);
+}

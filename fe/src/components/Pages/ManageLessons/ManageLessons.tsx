@@ -22,26 +22,32 @@ const ManageLessons: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [deletingLesson, setDeletingLesson] = useState<Lesson | null>(null);
-  const [newLessonName, setNewLessonName] = useState("");
 
   useEffect(() => {
     if (currentLanguage) {
       refreshData();
     }
   }, [currentLanguage, refreshData]);
-  const handleCreateOrUpdate = async (name: string) => {
+  const handleCreateOrUpdate = async (
+    name: string,
+    selectedWordIds?: number[]
+  ) => {
     let success = false;
 
     if (editingLesson) {
       // Update existing lesson
-      success = await updateLesson(editingLesson.id, name);
+      success = await updateLesson(
+        editingLesson.id,
+        name,
+        selectedWordIds || []
+      );
     } else {
       // Create new lesson
-      success = await createLesson(name);
+      const lessonId = await createLesson(name, selectedWordIds);
+      success = !!lessonId;
     }
 
     if (success) {
-      setNewLessonName("");
       setEditingLesson(null);
       setIsCreateModalOpen(false);
     }
@@ -64,7 +70,6 @@ const ManageLessons: React.FC = () => {
   const handleModalClose = () => {
     setIsCreateModalOpen(false);
     setEditingLesson(null);
-    setNewLessonName("");
     setError("");
   };
   if (!currentLanguage) return <div>Please select a language</div>;
@@ -98,8 +103,7 @@ const ManageLessons: React.FC = () => {
         >
           <i className="bi bi-plus"></i>
         </button>
-      </div>
-
+      </div>{" "}
       <CreateLesson
         isOpen={isCreateModalOpen}
         onClose={handleModalClose}

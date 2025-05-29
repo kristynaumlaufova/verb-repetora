@@ -43,16 +43,16 @@ namespace BE.Controllers
             else
             {
                 query = query.OrderBy(l => l.Name);
-            }
-
-            var items = await query
+            }            var items = await query
+                .Include(l => l.WordInLessons)
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
                 .Select(l => new LessonDto
                 {
                     Id = l.Id,
                     Name = l.Name,
-                    LanguageId = l.LangId
+                    LanguageId = l.LangId,
+                    WordIds = l.WordInLessons.Select(wl => wl.WordId).ToList()
                 })
                 .ToListAsync();
 
@@ -63,9 +63,8 @@ namespace BE.Controllers
         public async Task<ActionResult<LessonDto>> GetLesson(int id)
         {
             var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
-
-            var lesson = await context.Lessons
+            if (user == null) return Unauthorized(); var lesson = await context.Lessons
+                .Include(l => l.WordInLessons)
                 .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
             if (lesson == null)
@@ -77,10 +76,10 @@ namespace BE.Controllers
             {
                 Id = lesson.Id,
                 Name = lesson.Name,
-                LanguageId = lesson.LangId
+                LanguageId = lesson.LangId,
+                WordIds = lesson.WordInLessons.Select(wl => wl.WordId).ToList()
             };
         }
-
         [HttpPost]
         public async Task<ActionResult<LessonDto>> CreateLesson(CreateLessonDto createDto)
         {
@@ -96,6 +95,23 @@ namespace BE.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
+            if (createDto.WordIds?.Any() == true)
+            {
+                var words = await context.Words
+                    .Where(w => createDto.WordIds.Contains(w.Id))
+                    .ToListAsync();
+
+                foreach (var word in words)
+                {
+                    lesson.WordInLessons.Add(new WordInLesson
+                    {
+                        WordId = word.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
             context.Lessons.Add(lesson);
             await context.SaveChangesAsync();
 
@@ -103,7 +119,8 @@ namespace BE.Controllers
             {
                 Id = lesson.Id,
                 Name = lesson.Name,
-                LanguageId = lesson.LangId
+                LanguageId = lesson.LangId,
+                WordIds = lesson.WordInLessons.Select(wl => wl.WordId).ToList()
             });
         }
 
@@ -111,18 +128,61 @@ namespace BE.Controllers
         public async Task<IActionResult> UpdateLesson(int id, UpdateLessonDto updateDto)
         {
             var user = await userManager.GetUserAsync(User);
-            if (user == null) return Unauthorized();
+            if (user == null) return Unauthorized(); var lesson = await context.Lessons
+                .Include(l => l.WordInLessons)
+                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);
 
-            var lesson = await context.Lessons
-                .FirstOrDefaultAsync(l => l.Id == id && l.UserId == user.Id);            if (lesson == null)
+            if (lesson == null)
             {
                 return NotFound();
             }
 
-            // Only update if the name has changed
+            bool shouldUpdate = false;
+
+            // Update name if changed
             if (lesson.Name != updateDto.Name)
             {
                 lesson.Name = updateDto.Name;
+                shouldUpdate = true;
+            }
+
+            // Update word assignments
+            var currentWordIds = lesson.WordInLessons.Select(w => w.WordId).ToHashSet();
+            var newWordIds = updateDto.WordIds.ToHashSet();
+
+            // Remove words that are no longer in the list
+            var wordsToRemove = lesson.WordInLessons.Where(wl => !newWordIds.Contains(wl.WordId)).ToList();
+            if (wordsToRemove.Any())
+            {
+                foreach (var wordInLesson in wordsToRemove)
+                {
+                    lesson.WordInLessons.Remove(wordInLesson);
+                }
+                shouldUpdate = true;
+            }
+
+            // Add new words
+            var wordsToAdd = newWordIds.Except(currentWordIds);
+            if (wordsToAdd.Any())
+            {
+                var words = await context.Words
+                    .Where(w => wordsToAdd.Contains(w.Id))
+                    .ToListAsync();
+
+                foreach (var word in words)
+                {
+                    lesson.WordInLessons.Add(new WordInLesson
+                    {
+                        WordId = word.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate)
+            {
                 lesson.UpdatedAt = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }

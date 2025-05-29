@@ -26,20 +26,22 @@ export const useLessonManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadLessons]);
-  const createLesson = useCallback(async (name: string) => {
-    if (!currentLanguage || !name.trim()) return false;
+  }, [loadLessons]);  
+  
+  const createLesson = useCallback(async (name: string, wordIds: number[] = []) => {
+    if (!currentLanguage || !name.trim()) return null;
     try {
-      await lessonService.createLesson(
+      const newLesson = await lessonService.createLesson(
         name.trim(),
-        currentLanguage.id
+        currentLanguage.id,
+        wordIds
       );
       await loadLessons();
       setError('');
-      return true;
+      return newLesson.id;
     } catch (error) {
       setError('Failed to create lesson');
-      return false;
+      return null;
     }
   }, [currentLanguage, loadLessons]);
 
@@ -54,11 +56,11 @@ export const useLessonManager = () => {
       return false;
     }
   }, [loadLessons]);
-  
-  const updateLesson = useCallback(async (lessonId: number, name: string) => {
+
+  const updateLesson = useCallback(async (lessonId: number, name: string, wordIds: number[] = []) => {
     if (!name.trim()) return false;
     try {
-      await lessonService.updateLesson(lessonId, name.trim());
+      await lessonService.updateLesson(lessonId, name.trim(), wordIds);
       await loadLessons();
       setError('');
       return true;
@@ -67,7 +69,6 @@ export const useLessonManager = () => {
       return false;
     }
   }, [loadLessons]);
-
   return {
     lessons,
     isLoading,

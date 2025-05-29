@@ -4,6 +4,7 @@ export interface Lesson {
   id: number;
   name: string;
   languageId: number;
+  wordIds: number[];
 }
 
 export interface LessonQueryParameters {
@@ -24,7 +25,8 @@ export interface LessonResponse {
   hasPreviousPage: boolean;
 }
 
-class LessonService {  async getLessons(params: LessonQueryParameters): Promise<LessonResponse> {
+class LessonService {  
+  async getLessons(params: LessonQueryParameters): Promise<LessonResponse> {
     const response = await apiClient.get('/Lesson', {
       params: {
         pageNumber: params.pageNumber || 1,
@@ -39,34 +41,30 @@ class LessonService {  async getLessons(params: LessonQueryParameters): Promise<
   }
   async createLesson(
     name: string,
-    languageId: number
+    languageId: number,
+    wordIds: number[] = []
   ): Promise<Lesson> {
     const response = await apiClient.post('/Lesson', {
       name,
-      languageId
+      languageId,
+      wordIds
     });
     return response.data;
   }
 
   async updateLesson(
     id: number,
-    name: string
+    name: string,
+    wordIds: number[] = []
   ): Promise<void> {
-    await apiClient.put(`/Lesson/${id}`, { name });
+    await apiClient.put(`/Lesson/${id}`, { 
+      name,
+      wordIds 
+    });
   }
 
   async deleteLesson(id: number): Promise<void> {
     await apiClient.delete(`/Lesson/${id}`);
-  }
-
-  async assignWordsToLesson(lessonId: number, wordIds: number[]): Promise<void> {
-    await apiClient.post(`/Lesson/${lessonId}/words`, { wordIds });
-  }
-
-  async removeWordsFromLesson(lessonId: number, wordIds: number[]): Promise<void> {
-    await apiClient.delete(`/Lesson/${lessonId}/words`, {
-      data: { wordIds },
-    });
   }
 }
 

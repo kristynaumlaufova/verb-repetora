@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "./ManageWords.module.css";
 import pageStyles from "../Pages.module.css";
 import CreateWord from "../../Dialogs/CreateWord/CreateWord";
@@ -15,7 +15,8 @@ const ManageWords: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [deletingWord, setDeletingWord] = useState<Word | null>(null);
-
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const {
     words,
     isLoading,
@@ -27,6 +28,8 @@ const ManageWords: React.FC = () => {
     createWord,
     updateWord,
     setError,
+    searchTerm,
+    setSearchTerm,
   } = useWordManager(currentLanguage?.id);
 
   const { wordTypes, isLoading: areWordTypesLoading } = useWordTypeManager(
@@ -55,7 +58,6 @@ const ManageWords: React.FC = () => {
       setDeletingWord(null);
     }
   };
-
   const handleCreateOrUpdate = async (
     wordTypeId: number,
     keyword: string,
@@ -69,6 +71,36 @@ const ManageWords: React.FC = () => {
       handleModalClose();
     }
   };
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    // Only set searching state if there's actual content to search
+    if (value.trim().length > 0) {
+      setIsSearching(true);
+    }
+
+    searchTimeout.current = setTimeout(() => {
+      refreshWords(value);
+      setIsSearching(false);
+    }, 600);
+  };
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+      if (searchTerm.trim().length > 0) {
+        setIsSearching(true);
+      }
+      refreshWords(searchTerm);
+      setIsSearching(false);
+    }
+  };
 
   useEffect(() => {
     if (!areWordTypesLoading) {
@@ -76,18 +108,62 @@ const ManageWords: React.FC = () => {
     }
   }, [refreshWords, areWordTypesLoading]);
 
+  // Cleanup the search timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
+
   const getWordType = (wordTypeId: number): WordType | undefined => {
     return wordTypes.find((type) => type.id === wordTypeId);
   };
-
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
       <h1 className={pageStyles.title}>Vocabulary</h1>
+      <div className={styles.searchContainer}>
+        <input
+          type="text"
+          placeholder="Search words..."
+          className={styles.searchInput}
+          value={searchTerm}
+          onChange={handleSearch}
+          onKeyDown={handleSearchKeyDown}
+        />{" "}
+        {searchTerm && (
+          <button
+            className={styles.clearButton}
+            onClick={() => {
+              setSearchTerm("");
+              setIsSearching(true);
+              refreshWords("");
+              setIsSearching(false);
+            }}
+            title="Clear search"
+          >
+            <i className="bi bi-x"></i>
+          </button>
+        )}{" "}
+        <button
+          className={styles.searchButton}
+          onClick={() => {
+            if (searchTerm.trim().length > 0) {
+              setIsSearching(true);
+            }
+            refreshWords(searchTerm);
+            setIsSearching(false);
+          }}
+          title="Search"
+        >
+          <i className="bi bi-search"></i>
+        </button>
+      </div>{" "}
       <div className={pageStyles.list}>
         <div className={pageStyles.wrapper}>
-          {" "}
-          {isLoading ? (
+          {isLoading || isSearching ? (
             <div className={pageStyles.loading}>Loading...</div>
           ) : !words || words.length === 0 ? (
             <div className={pageStyles.noContent}>No words found</div>
