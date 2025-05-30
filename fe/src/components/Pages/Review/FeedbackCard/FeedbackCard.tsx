@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styles from "./FeedbackCard.module.css";
 import { Word } from "../../../../services/wordService";
 import { WordType } from "../../../../services/wordTypeService";
@@ -22,6 +22,23 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({
   getFieldNames,
   isLastWord,
 }) => {
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isCorrect !== null && nextButtonRef.current) {
+      // Add a small delay before focusing the button to prevent immediate Enter key processing
+      const focusTimeout = setTimeout(() => {
+        if (nextButtonRef.current) {
+          nextButtonRef.current.focus();
+        }
+      }, 100);
+
+      return () => {
+        clearTimeout(focusTimeout);
+      };
+    }
+  }, [isCorrect]);
+
   return (
     <div className={styles.feedbackCardContainer}>
       {" "}
@@ -50,7 +67,6 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({
               );
             })}
           </div>
-
           {isCorrect !== null && (
             <div
               className={
@@ -59,10 +75,14 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({
             >
               {isCorrect ? "Correct!" : "Incorrect!"}
             </div>
-          )}
-
+          )}{" "}
           <div className={styles.buttonGroup}>
-            <button className={styles.nextButton} onClick={onNext}>
+            {" "}
+            <button
+              className={styles.nextButton}
+              onClick={onNext}
+              ref={nextButtonRef}
+            >
               {isLastWord ? "Finish" : "Next Word"}
             </button>
           </div>

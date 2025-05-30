@@ -226,6 +226,39 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         return NoContent();
     }
 
+    /// <summary>
+    /// Retrieves multiple word types by their IDs.
+    /// </summary>
+    /// <param name="wordTypeIds">An array of word type IDs to retrieve.</param>
+    /// <returns>The requested word types if found.</returns>
+    /// <example>
+    /// POST /api/WordType/byIds
+    /// [1, 2, 3]
+    /// </example>
+    [Route("byIds")]
+    [HttpPost]
+    public async Task<ActionResult<IEnumerable<WordTypeDto>>> GetWordTypesByIds([FromBody] int[] wordTypeIds)
+    {
+        if (wordTypeIds == null || wordTypeIds.Length == 0)
+        {
+            return Ok(new List<WordTypeDto>());
+        }
+
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var wordTypes = await context.WordTypes
+            .Where(wt => wordTypeIds.Contains(wt.Id) && wt.UserId == user.Id)
+            .ToListAsync();
+
+        var wordTypeDtos = wordTypes.Select(wt => ToDto(wt)).ToList();
+
+        return Ok(wordTypeDtos);
+    }
+
     private bool WordTypeExists(int id)
     {
         return context.WordTypes.Any(e => e.Id == id);

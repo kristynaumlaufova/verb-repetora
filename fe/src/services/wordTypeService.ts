@@ -43,6 +43,14 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     return response.data;
   },
 
+  getWordTypesByIds: async (wordTypeIds: number[]): Promise<WordType[]> => {
+    if (!wordTypeIds || wordTypeIds.length === 0) {
+      return [];
+    }
+    const response = await apiClient.post('/WordType/byIds', wordTypeIds);
+    return response.data;
+  },
+
   createWordType: async (name: string, fields: string, langId: number): Promise<WordType> => {
     const response = await apiClient.post('/WordType', {
       name,

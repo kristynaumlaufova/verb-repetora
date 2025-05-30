@@ -1,12 +1,18 @@
 import { apiClient } from "./apiService";
 import { Word } from "./wordService";
 import { lessonService } from "./lessonService";
+import { WordType, wordTypeService } from "./wordTypeService";
 
 export interface ReviewSession {
   words: Word[];
   currentIndex: number;
   correctAnswers: number;
   incorrectAnswers: number;
+}
+
+export interface ReviewData {
+  words: Word[];
+  wordTypes: WordType[];
 }
 
 class ReviewService {
@@ -35,6 +41,45 @@ class ReviewService {
     }
     
     return words;
+  }
+
+  async getWordTypesForWords(words: Word[]): Promise<WordType[]> {
+    // Get all unique word type IDs from the words
+    const wordTypeIds = Array.from(
+      new Set(words.map(word => word.wordTypeId))
+    );
+    
+    let wordTypes: WordType[] = [];
+    try {
+      wordTypes = await wordTypeService.getWordTypesByIds(wordTypeIds);
+    } catch (error) {
+      console.error("Failed to fetch word types:", error);
+    }
+    
+    return wordTypes;
+  }
+
+  async getReviewData(lessonIds: number[], type: "all" | "recommended" = "all"): Promise<ReviewData> {
+    let words: Word[] = [];
+    
+    // Get words based on the review type
+    if (type === "all") {
+
+      words = await this.getWordsForLessons(lessonIds);
+    } else {
+      // For future implementation - recommended words based on FSRS algorithm
+      // This is a placeholder for now
+      words = await this.getWordsForLessons(lessonIds);
+      // TODO: Implement FSRS algorithm filtering here
+      console.log("FSRS-based recommendation to be implemented");
+    }
+    
+    const wordTypes = await this.getWordTypesForWords(words);
+    
+    return {
+      words,
+      wordTypes
+    };
   }
 }
 

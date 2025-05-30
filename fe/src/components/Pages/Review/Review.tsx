@@ -5,7 +5,6 @@ import pageStyles from "../Pages.module.css";
 import { Word } from "../../../services/wordService";
 import { WordType } from "../../../services/wordTypeService";
 import { reviewService } from "../../../services/reviewService";
-import { wordTypeService } from "../../../services/wordTypeService";
 import ReviewSummary from "../../Dialogs/ReviewSummary/ReviewSummary";
 import ProgressBar from "./ProgressBar/ProgressBar";
 import AnswerForm from "./AnswerForm/AnswerForm";
@@ -34,7 +33,6 @@ const Review: React.FC = () => {
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
-  // Load words for review
   useEffect(() => {
     const loadReviewData = async () => {
       if (!state?.lessonIds || state.lessonIds.length === 0) {
@@ -44,29 +42,13 @@ const Review: React.FC = () => {
 
       try {
         setIsLoading(true);
-        const fetchedWords = await reviewService.getWordsForLessons(
-          state.lessonIds
+        const reviewData = await reviewService.getReviewData(
+          state.lessonIds,
+          state.type
         );
 
-        setWords(fetchedWords);
-
-        // Collect all wordTypeIds
-        const wordTypeIds = Array.from(
-          new Set(fetchedWords.map((word) => word.wordTypeId))
-        );
-
-        // Fetch word types
-        const typesMap = new Map<number, WordType>();
-        for (const typeId of wordTypeIds) {
-          try {
-            const wordType = await wordTypeService.getWordType(typeId);
-            typesMap.set(typeId, wordType);
-          } catch (error) {
-            console.error(`Failed to fetch word type ${typeId}:`, error);
-          }
-        }
-
-        setWordTypes(Array.from(typesMap.values()));
+        setWords(reviewData.words);
+        setWordTypes(reviewData.wordTypes);
       } catch (error) {
         console.error("Error loading review data:", error);
       } finally {

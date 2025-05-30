@@ -33,10 +33,10 @@
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
-  max-height: calc(100vh - 220px); /* Use most of viewport height with space for other elements */
+  max-height: calc(100vh - 220px);
   overflow-y: auto;
   padding-right: 0.5rem;
-  padding-bottom: 2rem; /* Add bottom margin */
+  padding-bottom: 2rem;
   scrollbar-width: thin;
   scrollbar-color: var(--main) transparent;
 }
@@ -117,4 +117,8 @@
 
 .nextButton:hover {
   background-color: var(--accent-1);
+}
+
+.nextButton:focus {
+  outline: none;
 }

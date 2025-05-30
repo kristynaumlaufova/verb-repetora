@@ -97,7 +97,17 @@ export const useWordTypeManager = (langId: number | undefined) => {
     } catch (error: any) {
       setError(error.message || "Failed to update word type");
       return false;
-    }  }, [refreshWordTypes]);
+    }  
+  }, [refreshWordTypes]);
+
+  const getWordTypesByIds = useCallback(async (wordTypeIds: number[]): Promise<WordType[]> => {
+    try {
+      return await wordTypeService.getWordTypesByIds(wordTypeIds);
+    } catch (error: any) {
+      setError(error.message || "Failed to fetch word types by IDs");
+      return [];
+    }
+  }, []);
 
   // Refresh word types when language changes
   useEffect(() => {
@@ -118,6 +128,7 @@ export const useWordTypeManager = (langId: number | undefined) => {
     deleteWordType,
     createWordType,
     updateWordType,
+    getWordTypesByIds,
     setError
   };
 };
