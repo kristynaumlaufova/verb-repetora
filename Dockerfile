@@ -43,4 +43,5 @@ RUN mkdir -p wwwroot
 COPY --from=frontend /frontend/build/ ./wwwroot/
 # Debug - verify contents
 RUN ls -la wwwroot/
+
 ENTRYPOINT ["dotnet", "BE.dll"]

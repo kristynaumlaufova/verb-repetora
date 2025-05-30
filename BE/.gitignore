@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Development configuration files
+appsettings.Development.json
+
 # .NET Core
 bin/
 obj/

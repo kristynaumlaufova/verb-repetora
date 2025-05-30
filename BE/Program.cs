@@ -8,9 +8,32 @@ using BE.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Connect DB
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Get connection settings - prioritize environment variables, then fall back to configuration
+// This ensures development settings are used locally but environment variables take precedence
+string connectionString;
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+// If all environment variables are provided, use them to build the connection string
+if (!string.IsNullOrEmpty(dbHost) &&
+    !string.IsNullOrEmpty(dbPort) &&
+    !string.IsNullOrEmpty(dbName) &&
+    !string.IsNullOrEmpty(dbUser) &&
+    !string.IsNullOrEmpty(dbPassword))
+{
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword}";
+    Console.WriteLine("Using connection string from environment variables");
+}
+// Otherwise use the connection string from appsettings.json
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    Console.WriteLine("Using connection string from configuration");
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));

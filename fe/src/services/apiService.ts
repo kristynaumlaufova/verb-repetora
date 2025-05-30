@@ -11,7 +11,7 @@ const apiClient = axios.create({
   maxRedirects: 0
 });
 
-// Add a response interceptor to handle common error cases
+// Handle common error cases
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
