@@ -23,10 +23,12 @@
   --accent-3-dark: #16635b;
   
   --danger-light: #f8d7da;
-  --danger-dark: #d61f1f;
+  --danger: #f12121;
+  --danger-dark: #cc1d1d;
   --danger-border: #f5c6cb;
-  --success-light: #80CCA8;
-  --success-dark: #009951
+  --success-light: #9ff5cd;
+  --success-dark: #028849;
+  --disabled: #b1b1b1;
 }
 
 body {

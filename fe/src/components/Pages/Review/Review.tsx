@@ -7,6 +7,9 @@ import { WordType } from "../../../services/wordTypeService";
 import { reviewService } from "../../../services/reviewService";
 import { wordTypeService } from "../../../services/wordTypeService";
 import ReviewSummary from "../../Dialogs/ReviewSummary/ReviewSummary";
+import ProgressBar from "./ProgressBar/ProgressBar";
+import AnswerForm from "./AnswerForm/AnswerForm";
+import FeedbackCard from "./FeedbackCard/FeedbackCard";
 
 interface ReviewLocationState {
   lessonIds: number[];
@@ -116,10 +119,6 @@ const Review: React.FC = () => {
     if (e.key === "Enter") {
       if (!isChecking && areAllFieldsAnswered()) {
         handleCheck();
-      } else if (isChecking) {
-        handleNext();
-      } else if (isSummaryOpen) {
-        handleFinish();
       }
     }
   };
@@ -184,7 +183,6 @@ const Review: React.FC = () => {
       </div>
     );
   }
-  // The summary is now rendered as a modal dialog
 
   // Render the review session
   const currentWord = getCurrentWord();
@@ -208,100 +206,33 @@ const Review: React.FC = () => {
       </div>
     );
   }
-
-  const progress = ((currentIndex + 1) / words.length) * 100;
   return (
     <div className={pageStyles.container}>
       <div className={styles.reviewContainer}>
-        {" "}
-        <div className={styles.reviewHeader}>
-          <div className={styles.progressInfo}>
-            <span>
-              {currentIndex + 1} of {words.length}
-            </span>
-          </div>
-        </div>
-        <div className={styles.progressBar}>
-          <div
-            className={styles.progressBarFill}
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <div className={styles.wordCard}>
-          <div className={styles.wordType}>{currentWordType.name}</div>
-          <div className={styles.wordKeyword}>{currentWord.keyword}</div>{" "}
-          {isChecking && (
-            <div className={styles.wordDetails}>
-              {getFieldNames().map((fieldName, index) => {
-                const expectedValue = currentWord.fields.split(";")[index];
-                const userValue = fieldAnswers[fieldName] || "";
-                const isIncorrect =
-                  userValue.toLowerCase().trim() !==
-                  expectedValue.toLowerCase().trim();
+        <ProgressBar currentIndex={currentIndex} totalWords={words.length} />
 
-                return (
-                  <div key={fieldName} className={styles.fieldDetail}>
-                    {fieldName}: {expectedValue}
-                    {isIncorrect && (
-                      <div className={styles.yourAnswer}>
-                        Your answer: {userValue}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {isChecking && isCorrect !== null && (
-            <div
-              className={
-                isCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect
-              }
-            >
-              {isCorrect ? "Correct!" : "Incorrect!"}
-            </div>
-          )}
-        </div>
-        {!isChecking && (
-          <div className={styles.form}>
-            {getFieldNames().map((fieldName, index) => (
-              <div key={fieldName} className={styles.inputGroup}>
-                <input
-                  id={`field-${fieldName}`}
-                  type="text"
-                  value={fieldAnswers[fieldName] || ""}
-                  onChange={(e) => handleFieldChange(fieldName, e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={fieldName}
-                  autoFocus={index === 0}
-                />
-              </div>
-            ))}{" "}
-            <div className={styles.buttonGroup}>
-              <button className={styles.giveUpButton} onClick={handleGiveUp}>
-                Give Up
-              </button>
-
-              <button
-                className={styles.checkButton}
-                onClick={handleCheck}
-                disabled={!areAllFieldsAnswered()}
-              >
-                Check
-              </button>
-            </div>
-          </div>
-        )}
-        {isChecking && (
-          <div className={styles.buttonGroup}>
-            <button
-              className={styles.nextButton}
-              onClick={handleNext}
-              onKeyDown={handleKeyDown}
-            >
-              {currentIndex + 1 >= words.length ? "Finish" : "Next Word"}
-            </button>
-          </div>
+        {!isChecking ? (
+          <AnswerForm
+            currentWord={currentWord}
+            currentWordType={currentWordType}
+            fieldAnswers={fieldAnswers}
+            onFieldChange={handleFieldChange}
+            onCheck={handleCheck}
+            onGiveUp={handleGiveUp}
+            onKeyDown={handleKeyDown}
+            areAllFieldsAnswered={areAllFieldsAnswered()}
+            getFieldNames={getFieldNames}
+          />
+        ) : (
+          <FeedbackCard
+            currentWord={currentWord}
+            currentWordType={currentWordType}
+            fieldAnswers={fieldAnswers}
+            isCorrect={isCorrect}
+            onNext={handleNext}
+            getFieldNames={getFieldNames}
+            isLastWord={currentIndex + 1 >= words.length}
+          />
         )}
       </div>
 

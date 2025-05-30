@@ -1,0 +1,93 @@
+.answerFormContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.wordCard {
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--box-shadow);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.wordType {
+  display: inline-block;
+  padding: 4px 12px;
+  background-color: var(--bg-secondary);
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.wordKeyword {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.inputGroup input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.inputGroup input:focus {
+  border-color: var(--accent-1);
+  outline: none;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.giveUpButton {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--danger);
+  color: var(--bg-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.giveUpButton:hover {
+  background-color: var(--danger-dark);
+}
+
+.checkButton {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--main);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.checkButton:hover {
+  background-color: var(--accent-1);
+}
+
+.checkButton:disabled {
+  background-color: var(--disabled);
+  cursor: pointer;
+}

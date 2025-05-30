@@ -11,22 +11,13 @@ export interface ReviewSession {
 
 class ReviewService {
   async getWordsForLessons(lessonIds: number[]): Promise<Word[]> {
-    // First, gather all word IDs from the selected lessons
-    const words: Word[] = [];
+    let words: Word[] = [];
     
     for (const lessonId of lessonIds) {
       try {
         const lesson = await lessonService.getLesson(lessonId);
         if (lesson.wordIds && lesson.wordIds.length > 0) {
-          // For each word ID, fetch the full word details
-          for (const wordId of lesson.wordIds) {
-            const response = await apiClient.get(`/Word/${wordId}`);
-            const word: Word = response.data;
-            // Avoid duplicates
-            if (!words.some(w => w.id === word.id)) {
-              words.push(word);
-            }
-          }
+          words = (await apiClient.post("/Word/byIds", lesson.wordIds))?.data;
         }
       } catch (error) {
         console.error(`Error fetching words for lesson ${lessonId}:`, error);
@@ -36,7 +27,6 @@ class ReviewService {
     return words;
   }
   
-  // This method would shuffle the words to make review more effective
   shuffleWords(words: Word[]): Word[] {
     // Create a copy of the words array to avoid modifying the original
     const shuffled = [...words];

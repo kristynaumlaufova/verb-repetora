@@ -34,6 +34,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     currentLanguage?.id
   );
   const { wordTypes } = useWordTypeManager(currentLanguage?.id);
+
   useClickOutside(modalRef, onClose);
 
   const resetDialogState = () => {

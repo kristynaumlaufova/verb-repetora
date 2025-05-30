@@ -1,0 +1,88 @@
+.feedbackCardContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.wordCard {
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px var(--box-shadow);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.wordType {
+  display: inline-block;
+  padding: 4px 12px;
+  background-color: var(--bg-secondary);
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.wordKeyword {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.wordDetails {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+}
+
+.fieldDetail {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.yourAnswer {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--danger-dark);
+}
+
+.feedbackCorrect {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: var(--success-light);
+  color: var(--success-dark);
+  border-radius: 4px;
+}
+
+.feedbackIncorrect {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: var(--danger-light);
+  color: var(--danger-dark);
+  border-radius: 4px;
+}
+
+.buttonGroup {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.nextButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--main);
+  color: var(--bg-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 150px;
+}
+
+.nextButton:hover {
+  background-color: var(--accent-1);
+}
