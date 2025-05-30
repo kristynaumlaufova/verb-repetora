@@ -33,12 +33,38 @@
   flex-direction: column;
   gap: 16px;
   margin-top: 16px;
+  max-height: calc(100vh - 220px); /* Use most of viewport height with space for other elements */
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  padding-bottom: 2rem; /* Add bottom margin */
+  scrollbar-width: thin;
+  scrollbar-color: var(--main) transparent;
+}
+
+.form::-webkit-scrollbar {
+  width: 2px;
+}
+
+.form::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form::-webkit-scrollbar-thumb {
+  background: var(--main);
+}
+
+.form::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-1);
+}
+
+.form:hover {
+  scrollbar-color: var(--accent-1) transparent;
 }
 
 .inputGroup input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 16px;
   transition: border-color 0.3s;

@@ -99,10 +99,34 @@
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
     z-index: 10;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding-right: 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--main) transparent;
+}
+
+.searchResults::-webkit-scrollbar {
+    width: 2px;
+}
+
+.searchResults::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.searchResults::-webkit-scrollbar-thumb {
+    background: var(--main);
+    border-radius: 2px;
+}
+
+.searchResults::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-1);
+}
+
+.searchResults:hover {
+    scrollbar-color: var(--accent-1) transparent;
 }
 
 .wordItem {
@@ -167,6 +191,33 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    max-height: calc(100vh - 350px); /* Dynamic height based on viewport */
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    padding-bottom: 1rem; /* Bottom margin inside scrollable area */
+    scrollbar-width: thin;
+    scrollbar-color: var(--main) transparent;
+}
+
+.selectedWordsList::-webkit-scrollbar {
+    width: 2px;
+}
+
+.selectedWordsList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.selectedWordsList::-webkit-scrollbar-thumb {
+    background: var(--main);
+    border-radius: 2px;
+}
+
+.selectedWordsList::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-1);
+}
+
+.selectedWordsList:hover {
+    scrollbar-color: var(--accent-1) transparent;
 }
 
 .selectedWordItem {

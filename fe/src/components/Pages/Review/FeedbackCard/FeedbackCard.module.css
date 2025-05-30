@@ -29,12 +29,43 @@
   margin-bottom: 16px;
 }
 
-.wordDetails {
+.scrollableContent {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+  max-height: calc(100vh - 220px); /* Use most of viewport height with space for other elements */
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  padding-bottom: 2rem; /* Add bottom margin */
+  scrollbar-width: thin;
+  scrollbar-color: var(--main) transparent;
+}
+
+.scrollableContent::-webkit-scrollbar {
+  width: 2px;
+}
+
+.scrollableContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollableContent::-webkit-scrollbar-thumb {
+  background: var(--main);
+}
+
+.scrollableContent::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-1);
+}
+
+.scrollableContent:hover {
+  scrollbar-color: var(--accent-1) transparent;
+}
+
+.wordDetails {
   text-align: left;
 }
+
+
 
 .fieldDetail {
   margin-bottom: 10px;
@@ -66,7 +97,8 @@
 }
 
 .buttonGroup {
-  margin-top: 16px;
+  margin-top: 24px;
+  margin-bottom: 8px;
   display: flex;
   justify-content: center;
 }

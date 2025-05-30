@@ -47,8 +47,8 @@ const Review: React.FC = () => {
         const fetchedWords = await reviewService.getWordsForLessons(
           state.lessonIds
         );
-        const shuffledWords = reviewService.shuffleWords(fetchedWords);
-        setWords(shuffledWords);
+
+        setWords(fetchedWords);
 
         // Collect all wordTypeIds
         const wordTypeIds = Array.from(
