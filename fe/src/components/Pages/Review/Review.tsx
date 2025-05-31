@@ -4,7 +4,10 @@ import styles from "./Review.module.css";
 import pageStyles from "../Pages.module.css";
 import { Word } from "../../../services/wordService";
 import { WordType } from "../../../services/wordTypeService";
-import { reviewService, ReviewSession } from "../../../services/reviewService";
+import {
+  useReviewManager,
+  ReviewSession,
+} from "../../../hooks/useReviewManager";
 import ReviewSummary from "../../Dialogs/ReviewSummary/ReviewSummary";
 import ProgressBar from "./ProgressBar/ProgressBar";
 import AnswerForm from "./AnswerForm/AnswerForm";
@@ -19,6 +22,7 @@ const Review: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as ReviewLocationState;
+  const reviewManager = useReviewManager();
 
   const [reviewSession, setReviewSession] = useState<ReviewSession | null>(
     null
@@ -31,7 +35,6 @@ const Review: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-
   useEffect(() => {
     const loadReviewData = async () => {
       if (!state?.lessonIds || state.lessonIds.length === 0) {
@@ -40,13 +43,13 @@ const Review: React.FC = () => {
       }
       try {
         setIsLoading(true);
-        const reviewData = await reviewService.getReviewData(
+        const reviewData = await reviewManager.getReviewData(
           state.lessonIds,
           state.type
         );
 
         // Initialize review session with the words
-        const session = reviewService.initReviewSession(reviewData.words);
+        const session = reviewManager.initReviewSession(reviewData.words);
         setReviewSession(session);
         setWordTypes(reviewData.wordTypes);
       } catch (error) {
@@ -57,6 +60,7 @@ const Review: React.FC = () => {
     };
 
     loadReviewData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, navigate]);
   const getCurrentWord = (): Word | undefined => {
     if (!reviewSession) return undefined;
@@ -155,7 +159,7 @@ const Review: React.FC = () => {
       const { correctFields, totalFields } = reviewSession._pendingAnswer;
 
       // Apply FSRS logic and update session
-      const updatedSession = reviewService.processAnswer(
+      const updatedSession = reviewManager.processAnswer(
         reviewSession,
         correctFields,
         totalFields
@@ -169,12 +173,12 @@ const Review: React.FC = () => {
       // Check if we've reached the end of the queue
       if (updatedSession.currentIndex >= updatedSession.reviewQueue.length) {
         // Complete session and save results
-        reviewService
+        reviewManager
           .completeReviewSession(updatedSession)
           .then(() => {
             setIsSummaryOpen(true);
           })
-          .catch((error) => {
+          .catch((error: any) => {
             console.error("Error completing review session:", error);
           });
       } else {

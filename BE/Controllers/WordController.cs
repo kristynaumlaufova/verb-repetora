@@ -310,8 +310,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
 
         if (filterByDue)
         {
-            var now = DateTime.UtcNow;
-            query = query.Where(w => w.Due <= now);
+            query = query.Where(w => w.Due <= DateTime.UtcNow);
         }
 
         var words = await query.ToListAsync();

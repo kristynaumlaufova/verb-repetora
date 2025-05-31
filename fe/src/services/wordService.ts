@@ -1,11 +1,6 @@
 import { apiClient } from "./apiService";
+import { LearningState } from "./fsrsService";
 
-export enum LearningState {
-  New = 0,
-  Learning = 1,
-  Review = 2,
-  Relearning = 3
-}
 
 export interface Word {
   id: number;
