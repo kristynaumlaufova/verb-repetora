@@ -1,0 +1,32 @@
+.chartContainer {
+  background-color: var(--bg-primary);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 6px var(--box-shadow);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.chartTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 0;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.chartContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  position: relative;
+}
+
+.noDataMessage {
+  color: var(--text-secondary);
+  font-size: 16px;
+  text-align: center;
+}

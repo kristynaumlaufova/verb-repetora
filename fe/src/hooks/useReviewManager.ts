@@ -117,25 +117,39 @@ export const useReviewManager = () => {
       return [];
     }
   }, []);
-  
-  /**
+    /**
    * Loads review data for the specified lessons
-   */
-  const getReviewData = useCallback(async (lessonIds: number[], type: "all" | "recommended" = "all"): Promise<ReviewData> => {
+   */  
+  
+  const getReviewData = useCallback(async (lessonIds: number[], type: "all" | "recommended" = "all", languageId?: number): Promise<ReviewData> => {
     setIsLoading(true);
     setError(null);
     
     try {
       let words: Word[] = [];
       
-      // Get words based on the review type
+    // Get words based on the review type
       if (type === "all") {
+        if (!lessonIds || lessonIds.length === 0) {
+          throw new Error("Lesson IDs are required for 'all' review type");
+        }
         words = await getWordsForLessons(lessonIds);
-      } else {
-        // Get words that are due for review based on FSRS algorithm
-        const allWords = await getWordsForLessons(lessonIds);
-        const wordIds = allWords.map(word => word.id);
-        words = await getDueWordsForReview(wordIds);
+      } else {        // For recommended type with empty lessonIds, fetch all due words
+        if (!lessonIds || lessonIds.length === 0) {
+          // Get all due words and new words regardless of lesson, optionally filtered by language
+          words = []; //await wordService.getDueWords(languageId);
+          
+          // Shuffle the words
+          words = shuffleWords(words);
+          
+          // Shuffle the combined list
+          words = shuffleWords(words);
+        } else {
+          // Get words that are due for review from the specified lessons
+          const allWords = await getWordsForLessons(lessonIds);
+          const wordIds = allWords.map(word => word.id);
+          words = await getDueWordsForReview(wordIds);
+        }
       }
       
       const wordTypes = await getWordTypesForWords(words);
@@ -151,7 +165,7 @@ export const useReviewManager = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [getWordsForLessons, getDueWordsForReview, getWordTypesForWords]);
+  }, [getWordsForLessons, getDueWordsForReview, getWordTypesForWords, shuffleWords]);
   
   /**
    * Initializes a review session with the given words

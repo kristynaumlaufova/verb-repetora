@@ -17,21 +17,6 @@ export interface Word {
   firstReview?: Date | null;
 }
 
-export interface WordDto {
-  id: number;
-  wordTypeId: number;
-  languageId: number;
-  keyword: string;
-  fields: string;
-  state?: LearningState;
-  step?: number | null;
-  stability?: number | null;
-  difficulty?: number | null;
-  due?: string;
-  lastReview?: string | null;
-  firstReview?: string | null;
-}
-
 export interface CreateWordRequest {
   languageId: number;
   wordTypeId: number;
@@ -73,7 +58,35 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+export interface DashboardStats {
+  dueWords: number;
+  totalWords: number;
+  stateDistribution: {
+    new: number;
+    learning: number;
+    review: number;
+    relearning: number;
+  };
+  dailyNewWords: Array<{ date: string; count: number }>;
+}
+
 export const wordService = {
+  getDashboardStats: async (langId?: number): Promise<DashboardStats> => {
+    const params = langId ? { langId } : {};
+    const response = await apiClient.get("/Word/dashboard-stats", { params });
+    return response.data;
+  },
+
+  getDueWordsCount: async (): Promise<number> => {
+    const response = await apiClient.get("/Word/due-count");
+    return response.data;
+  },
+  
+  getDueWords: async (langId?: number): Promise<Word[]> => {
+    const params = langId ? { langId } : {};
+    return await apiClient.get("/Word/due-words", { params });
+  },
+  
   getWords: async (params: WordQueryParameters): Promise<PaginatedResponse<Word>> => {
     const response = await apiClient.get("/Word", { 
       params: {
@@ -86,22 +99,18 @@ export const wordService = {
       }
     });
     
-    // Convert DTOs to Word objects
-    const dtoResponse = response.data as PaginatedResponse<WordDto>;
     return {
-      ...dtoResponse,
-      items: dtoResponse.items.map(convertDtoToWord)
+      ...response.data,
+      items: response.data.items
     };
   },
 
   createWord: async (word: CreateWordRequest): Promise<Word> => {
-    const response = await apiClient.post("/Word", word);
-    return convertDtoToWord(response.data);
+    return (await apiClient.post("/Word", word)).data;
   },
 
   updateWord: async (id: number, word: UpdateWordRequest): Promise<Word> => {
-    const response = await apiClient.put(`/Word/${id}`, word);
-    return convertDtoToWord(response.data);
+    return (await apiClient.put(`/Word/${id}`, word)).data;
   },
   
   deleteWord: async (id: number): Promise<void> => {
@@ -112,31 +121,14 @@ export const wordService = {
     if (!wordIds || wordIds.length === 0) {
       return [];
     }
-    const response = await apiClient.post("/Word/byIds", wordIds);
-    // Convert DTOs to Word objects
-    return response.data.map(convertDtoToWord);
-  },
-  
-  // Method to update FSRS data for a word
-  updateFSRSData: async (data: UpdateFSRSDataRequest): Promise<Word> => {
-    const response = await apiClient.put(`/Word/updateFSRS/${data.id}`, data);
-    return convertDtoToWord(response.data);
+    
+    return (await apiClient.post("/Word/byIds", wordIds)).data;
   },
   
   // Method to batch update FSRS data for multiple words
   updateBatchFSRSData: async (dataList: UpdateFSRSDataRequest[]): Promise<void> => {
     await apiClient.post("/Word/updateBatchFSRS", dataList);
   }
-};
-
-// Helper function to convert WordDto to Word (converting string dates to Date objects)
-export const convertDtoToWord = (dto: WordDto): Word => {
-  return {
-    ...dto,
-    due: dto.due ? new Date(dto.due) : undefined,
-    lastReview: dto.lastReview ? new Date(dto.lastReview) : null,
-    firstReview: dto.firstReview ? new Date(dto.firstReview) : null
-  };
 };
 
 // Helper function to convert Word to UpdateFSRSDataRequest (converting Date objects to strings)

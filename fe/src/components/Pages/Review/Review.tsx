@@ -16,6 +16,7 @@ import FeedbackCard from "./FeedbackCard/FeedbackCard";
 interface ReviewLocationState {
   lessonIds: number[];
   type: "all" | "recommended";
+  languageId?: number;
 }
 
 const Review: React.FC = () => {
@@ -35,18 +36,24 @@ const Review: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
   useEffect(() => {
     const loadReviewData = async () => {
-      if (!state?.lessonIds || state.lessonIds.length === 0) {
+      if (!state) {
         navigate("/lessons");
         return;
       }
-      try {
-        setIsLoading(true);
+      try {        setIsLoading(true);
         const reviewData = await reviewManager.getReviewData(
-          state.lessonIds,
-          state.type
-        );
+          state.lessonIds || [],
+          state.type,
+          state.languageId
+        );        // If no words to review, show message and return to dashboard
+        if (!reviewData.words || reviewData.words.length === 0) {
+          console.log("No words to review");
+          navigate("/");
+          return;
+        }
 
         // Initialize review session with the words
         const session = reviewManager.initReviewSession(reviewData.words);

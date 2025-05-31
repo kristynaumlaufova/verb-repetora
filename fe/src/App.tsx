@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import LeftSideBar from "./components/LeftSideBar/LeftSideBar";
 import TopBar from "./components/TopBar/TopBar";
-import Dashboard from "./components/Pages/Dashboard";
+import Dashboard from "./components/Pages/Dashboard/Dashboard";
 import Languages from "./components/Pages/Languages/Languages";
 import WordTypes from "./components/Pages/WordTypes/WordTypes";
 import Lessons from "./components/Pages/Lessons/Lessons";

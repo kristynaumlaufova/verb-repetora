@@ -4,6 +4,7 @@ import {
   Word,
   CreateWordRequest,
   UpdateWordRequest,
+  DashboardStats,
 } from "../services/wordService";
 
 export const useWordManager = (langId: number | undefined) => {
@@ -136,8 +137,7 @@ export const useWordManager = (langId: number | undefined) => {
       );      
       
       return false;
-    }
-  };
+    }  };
   
   const getWordsByIds = async (wordIds: number[]): Promise<Word[]> => {
     if (!wordIds || wordIds.length === 0) {
@@ -153,7 +153,25 @@ export const useWordManager = (langId: number | undefined) => {
       return [];
     }
   };
-  
+  const loadDashboardData = useCallback(async (): Promise<DashboardStats | null> => {
+    if (!langId) {
+      setError("Language ID is required to load dashboard data");
+      return null;
+    }
+    
+    try {
+      setIsLoading(true);
+      return await wordService.getDashboardStats(langId);
+    } catch (error: any) {
+      setError(
+        error.response?.data || "Failed to load dashboard data"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [langId]);
+
   return {
     words,
     isLoading,
@@ -165,6 +183,7 @@ export const useWordManager = (langId: number | undefined) => {
     updateWord,
     deleteWord,
     getWordsByIds,
+    loadDashboardData,
     setError,
     searchTerm,
     setSearchTerm,

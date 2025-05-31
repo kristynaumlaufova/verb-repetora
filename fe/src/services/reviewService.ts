@@ -1,11 +1,8 @@
 import { apiClient } from "./apiService";
-import { LearningState, Word, UpdateFSRSDataRequest, wordService, convertWordToFSRSRequest, convertDtoToWord } from "./wordService";
+import { Word, UpdateFSRSDataRequest, wordService, convertWordToFSRSRequest } from "./wordService";
 import { lessonService } from "./lessonService";
 import { WordType, wordTypeService } from "./wordTypeService";
 import { fsrsService, Rating } from "./fsrsService";
-
-// Export the Rating from fsrsService for backward compatibility
-export { Rating };
 
 export interface ReviewSession {
   reviewQueue: Word[];
@@ -31,10 +28,10 @@ class ReviewService {
       try {
         const lesson = await lessonService.getLesson(lessonId);
         if (lesson.wordIds && lesson.wordIds.length > 0) {
-          const response = await apiClient.post("/Word/byIds", lesson.wordIds);
-          // Convert WordDto objects to Word objects with proper Date objects
-          const convertedWords = response?.data.map(convertDtoToWord) || [];
-          words = [...words, ...convertedWords];
+          // const response = await apiClient.post("/Word/byIds", lesson.wordIds);
+          // // Convert WordDto objects to Word objects with proper Date objects
+          // const convertedWords = response?.data.map(convertDtoToWord) || [];
+          // words = [...words, ...convertedWords];
         }
       } catch (error) {
         console.error(`Error fetching words for lesson ${lessonId}:`, error);
@@ -101,15 +98,16 @@ class ReviewService {
    * @returns Words that are due for review
    */
   async getDueWordsForReview(wordIds: number[]): Promise<Word[]> {
-    try {
-      // Request words with the filterByDue parameter set to true
-      const response = await apiClient.post("/Word/byIds?filterByDue=true", wordIds);
-      // Convert WordDto objects to Word objects with proper Date objects
-      return response?.data.map(convertDtoToWord) || [];
-    } catch (error) {
-      console.error("Error fetching due words:", error);
-      return [];
-    }
+    // try {
+    //   // Request words with the filterByDue parameter set to true
+    //   const response = await apiClient.post("/Word/byIds?filterByDue=true", wordIds);
+    //   // Convert WordDto objects to Word objects with proper Date objects
+    //   return response?.data.map(convertDtoToWord) || [];
+    // } catch (error) {
+    //   console.error("Error fetching due words:", error);
+    //   return [];
+    // }
+    return [];
   }
 
   /**

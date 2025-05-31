@@ -281,22 +281,17 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     /// <summary>
     /// Retrieves words by their IDs.
     /// </summary>
-    /// <param name="wordIds">The IDs of the words to retrieve.</param>
+    /// <param name="wordIds">The IDs of the words to retrieve. If null or empty, retrieves all user's words.</param>
     /// <param name="filterByDue">Whether to filter words by their due date.</param>
-    /// <returns>A list of words matching the provided IDs and optionally due for review.</returns>
+    /// <returns>A list of words matching the provided IDs (or all words if no IDs provided) and optionally due for review.</returns>
     /// <example>
     /// POST /api/Word/byIds?filterByDue=true
     /// [1, 2, 3]
     /// </example>
     [Route("byIds")]
     [HttpPost]
-    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[] wordIds, [FromQuery] bool filterByDue = false)
+    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[]? wordIds, [FromQuery] bool filterByDue = false)
     {
-        if (wordIds == null || wordIds.Length == 0)
-        {
-            return Ok(new List<WordDto>());
-        }
-
         var user = await userManager.GetUserAsync(User);
         if (user == null)
         {
@@ -306,7 +301,13 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         var query = context.Words
             .Include(w => w.Language)
             .Include(w => w.WordType)
-            .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id);
+            .Where(w => w.Language.UserId == user.Id);
+
+        // Filter by IDs only if provided
+        if (wordIds != null && wordIds.Length > 0)
+        {
+            query = query.Where(w => wordIds.Contains(w.Id));
+        }
 
         if (filterByDue)
         {
@@ -331,94 +332,6 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         )).ToList();
 
         return Ok(wordDtos);
-    }
-
-    private bool WordExists(int id)
-    {
-        return context.Words.Any(e => e.Id == id);
-    }
-
-    /// <summary>
-    /// Updates the FSRS data for a specific word.
-    /// </summary>
-    /// <param name="id">The ID of the word to update.</param>
-    /// <param name="data">The updated FSRS data.</param>
-    /// <returns>The updated word.</returns>
-    /// <example>
-    /// PUT /api/Word/updateFSRS/5
-    /// {
-    ///     "id": 5,
-    ///     "state": 2,
-    ///     "step": null,
-    ///     "stability": 3.45,
-    ///     "difficulty": 0.3,
-    ///     "due": "2025-06-15T10:00:00Z",
-    ///     "lastReview": "2025-05-31T10:00:00Z"
-    /// }
-    /// </example>
-    [HttpPut("updateFSRS/{id}")]
-    public async Task<ActionResult<WordDto>> UpdateFSRSData(int id, UpdateFSRSDataRequest data)
-    {
-        if (id != data.Id)
-        {
-            return BadRequest("ID mismatch");
-        }
-
-        var user = await userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Unauthorized("User not authenticated");
-        }
-
-        var word = await context.Words
-            .Include(w => w.Language)
-            .FirstOrDefaultAsync(w => w.Id == id);
-
-        if (word == null || word.Language.UserId != user.Id)
-        {
-            return NotFound();
-        }
-
-        // Update FSRS fields
-        word.State = data.State;
-        word.Step = data.Step;
-        word.Stability = data.Stability;
-        word.Difficulty = data.Difficulty;
-        word.Due = data.Due;
-        word.LastReview = data.LastReview;
-
-        if (data.FirstReview.HasValue && !word.FirstReview.HasValue)
-        {
-            word.FirstReview = data.FirstReview;
-        }
-
-        try
-        {
-            await context.SaveChangesAsync();
-
-            return new WordDto(
-                word.Id,
-                word.WordTypeId,
-                word.LanguageId,
-                word.Keyword,
-                word.Fields,
-                word.State,
-                word.Step,
-                word.Stability,
-                word.Difficulty,
-                word.Due,
-                word.LastReview,
-                word.FirstReview
-            );
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!WordExists(id))
-            {
-                return NotFound();
-            }
-            throw;
-        }
     }
 
     /// <summary>
@@ -466,7 +379,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         // Get all word IDs from the request
         var wordIds = dataList.Select(d => d.Id).ToList();
 
-        // Load all words in a single query
+        // Load all words
         var words = await context.Words
             .Include(w => w.Language)
             .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id)
@@ -496,5 +409,81 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
 
         await context.SaveChangesAsync();
         return NoContent();
+    }
+
+    /// <summary>
+    /// Gets dashboard statistics for the current user
+    /// </summary>
+    /// <param name="langId">Language ID to filter statistics by specific language</param>
+    /// <returns>Statistics including due word count, total word count, state distribution, and daily new words.</returns>
+    /// <example>
+    /// GET /api/Word/dashboard-stats?langId=1
+    /// </example>
+    [HttpGet("dashboard-stats")]
+    public async Task<ActionResult<DashboardStatsDto>> GetDashboardStats([FromQuery] int langId)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        // Get all user's word of current language
+        var words = await context.Words
+            .Include(w => w.Language)
+            .Where(w => w.Language.UserId == user.Id && w.LanguageId == langId)
+            .ToListAsync();
+
+        if (words.Count == 0)
+        {
+            return Ok(new DashboardStatsDto
+            {
+                DueWords = 0,
+                TotalWords = 0,
+                StateDistribution = new StateDistributionDto { New = 0, Learning = 0, Review = 0, Relearning = 0 },
+                DailyNewWords = []
+            });
+        }
+
+        // Calculate due words (current date or earlier)
+        var dueWords = words.Count(w => w.Due <= DateTime.UtcNow);
+
+        // Calculate state distribution
+        var stateDistribution = new StateDistributionDto
+        {
+            New = words.Count(w => w.State == Models.Enums.LearningState.New),
+            Learning = words.Count(w => w.State == Models.Enums.LearningState.Learning),
+            Review = words.Count(w => w.State == Models.Enums.LearningState.Review),
+            Relearning = words.Count(w => w.State == Models.Enums.LearningState.Relearning)
+        };
+
+        // Calculate daily new words based on FirstReview date
+        var dailyNewWords = words
+            .Where(w => w.FirstReview != null)
+            .GroupBy(w => w.FirstReview!.Value.Date)
+            .Select(g => new DailyNewWordsDto
+            {
+                Date = g.Key.ToString("yyyy-MM-dd"),
+                Count = g.Count()
+            })
+            .OrderByDescending(d => d.Date)
+            .Take(14) // Last 14 days
+            .OrderBy(d => d.Date)
+            .ToList();
+
+        var result = new DashboardStatsDto
+        {
+            DueWords = dueWords,
+            TotalWords = words.Count,
+            StateDistribution = stateDistribution,
+            DailyNewWords = dailyNewWords
+        };
+
+        return Ok(result);
+    }
+
+    private bool WordExists(int id)
+    {
+        return context.Words.Any(e => e.Id == id);
     }
 }
