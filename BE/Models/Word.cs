@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using BE.Models.Enums;
 
 namespace BE.Models;
 
@@ -15,6 +16,17 @@ public class Word
     public string Keyword { get; set; } = string.Empty;
 
     public string Fields { get; set; } = string.Empty;
+
+    // FSRS fields
+    public LearningState State { get; set; } = LearningState.New;
+    public int? Step { get; set; } = null;
+    public double? Stability { get; set; } = null;
+    public double? Difficulty { get; set; } = null;
+    public DateTime Due { get; set; } = DateTime.UtcNow;
+    public DateTime? LastReview { get; set; } = null;
+
+    // For statistics
+    public DateTime? FirstReview { get; set; } = null;
 
     // Navigation properties
     public WordType WordType { get; set; } = null!;

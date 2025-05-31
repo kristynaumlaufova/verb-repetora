@@ -1,3 +1,5 @@
+using BE.Models.Enums;
+
 namespace BE.Models.Dto;
 
 public record WordDto(
@@ -5,7 +7,14 @@ public record WordDto(
     int WordTypeId,
     int LanguageId,
     string Keyword,
-    string Fields
+    string Fields,
+    LearningState State = LearningState.New,
+    int? Step = null,
+    double? Stability = null,
+    double? Difficulty = null,
+    DateTime Due = default,
+    DateTime? LastReview = null,
+    DateTime? FirstReview = null
 );
 
 public record CreateWordRequest(
@@ -20,4 +29,15 @@ public record UpdateWordRequest(
     int WordTypeId,
     string Keyword,
     string Fields
+);
+
+public record UpdateFSRSDataRequest(
+    int Id,
+    LearningState State,
+    int? Step,
+    double? Stability,
+    double? Difficulty,
+    DateTime Due,
+    DateTime? LastReview,
+    DateTime? FirstReview = null
 );

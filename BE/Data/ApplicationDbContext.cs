@@ -12,6 +12,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Lesson> Lessons { get; set; }
     public DbSet<WordType> WordTypes { get; set; }
     public DbSet<Word> Words { get; set; }
+    public DbSet<ReviewLog> ReviewLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,10 +54,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithOne(w => w.WordType)
             .HasForeignKey(w => w.WordTypeId)
             .OnDelete(DeleteBehavior.Cascade);
-
         // Configure the many-to-many relationship between Lesson and Word
         modelBuilder.Entity<Lesson>()
             .HasMany(l => l.Words)
             .WithMany(w => w.Lessons);
+
+        // Configure the relationship between Word and ReviewLog
+        modelBuilder.Entity<Word>()
+            .HasMany<ReviewLog>()
+            .WithOne(r => r.Word)
+            .HasForeignKey(r => r.WordId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

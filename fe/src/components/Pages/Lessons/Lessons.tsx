@@ -90,7 +90,12 @@ const Lessons: React.FC = () => {
         <button
           className={styles.reviewRecommandedButton}
           onClick={() =>
-            navigate("/review", { state: { type: "recommended" } })
+            navigate("/review", {
+              state: {
+                lessonIds: selectedLessons,
+                type: "recommended",
+              },
+            })
           }
           disabled={selectedLessons.length === 0}
         >
@@ -100,7 +105,10 @@ const Lessons: React.FC = () => {
           className={styles.reviewAllButton}
           onClick={() =>
             navigate("/review", {
-              state: { lessonIds: selectedLessons, type: "all" },
+              state: {
+                lessonIds: selectedLessons,
+                type: "all",
+              },
             })
           }
           disabled={selectedLessons.length === 0}

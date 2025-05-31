@@ -67,7 +67,14 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
                 w.WordTypeId,
                 w.LanguageId,
                 w.Keyword,
-                w.Fields
+                w.Fields,
+                w.State,
+                w.Step,
+                w.Stability,
+                w.Difficulty,
+                w.Due,
+                w.LastReview,
+                w.FirstReview
             ))
             .ToListAsync();
 
@@ -275,14 +282,15 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     /// Retrieves words by their IDs.
     /// </summary>
     /// <param name="wordIds">The IDs of the words to retrieve.</param>
-    /// <returns>A list of words matching the provided IDs.</returns>
+    /// <param name="filterByDue">Whether to filter words by their due date.</param>
+    /// <returns>A list of words matching the provided IDs and optionally due for review.</returns>
     /// <example>
-    /// POST /api/Word/byIds
+    /// POST /api/Word/byIds?filterByDue=true
     /// [1, 2, 3]
     /// </example>
     [Route("byIds")]
     [HttpPost]
-    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[] wordIds)
+    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[] wordIds, [FromQuery] bool filterByDue = false)
     {
         if (wordIds == null || wordIds.Length == 0)
         {
@@ -295,18 +303,32 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
             return Unauthorized("User not authenticated");
         }
 
-        var words = await context.Words
+        var query = context.Words
             .Include(w => w.Language)
             .Include(w => w.WordType)
-            .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id)
-            .ToListAsync();
+            .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id);
+
+        if (filterByDue)
+        {
+            var now = DateTime.UtcNow;
+            query = query.Where(w => w.Due <= now);
+        }
+
+        var words = await query.ToListAsync();
 
         var wordDtos = words.Select(word => new WordDto(
             word.Id,
             word.WordTypeId,
             word.LanguageId,
             word.Keyword,
-            word.Fields
+            word.Fields,
+            word.State,
+            word.Step,
+            word.Stability,
+            word.Difficulty,
+            word.Due,
+            word.LastReview,
+            word.FirstReview
         )).ToList();
 
         return Ok(wordDtos);
@@ -315,5 +337,165 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     private bool WordExists(int id)
     {
         return context.Words.Any(e => e.Id == id);
+    }
+
+    /// <summary>
+    /// Updates the FSRS data for a specific word.
+    /// </summary>
+    /// <param name="id">The ID of the word to update.</param>
+    /// <param name="data">The updated FSRS data.</param>
+    /// <returns>The updated word.</returns>
+    /// <example>
+    /// PUT /api/Word/updateFSRS/5
+    /// {
+    ///     "id": 5,
+    ///     "state": 2,
+    ///     "step": null,
+    ///     "stability": 3.45,
+    ///     "difficulty": 0.3,
+    ///     "due": "2025-06-15T10:00:00Z",
+    ///     "lastReview": "2025-05-31T10:00:00Z"
+    /// }
+    /// </example>
+    [HttpPut("updateFSRS/{id}")]
+    public async Task<ActionResult<WordDto>> UpdateFSRSData(int id, UpdateFSRSDataRequest data)
+    {
+        if (id != data.Id)
+        {
+            return BadRequest("ID mismatch");
+        }
+
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        var word = await context.Words
+            .Include(w => w.Language)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (word == null || word.Language.UserId != user.Id)
+        {
+            return NotFound();
+        }
+
+        // Update FSRS fields
+        word.State = data.State;
+        word.Step = data.Step;
+        word.Stability = data.Stability;
+        word.Difficulty = data.Difficulty;
+        word.Due = data.Due;
+        word.LastReview = data.LastReview;
+
+        if (data.FirstReview.HasValue && !word.FirstReview.HasValue)
+        {
+            word.FirstReview = data.FirstReview;
+        }
+
+        try
+        {
+            await context.SaveChangesAsync();
+
+            return new WordDto(
+                word.Id,
+                word.WordTypeId,
+                word.LanguageId,
+                word.Keyword,
+                word.Fields,
+                word.State,
+                word.Step,
+                word.Stability,
+                word.Difficulty,
+                word.Due,
+                word.LastReview,
+                word.FirstReview
+            );
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!WordExists(id))
+            {
+                return NotFound();
+            }
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates the FSRS data for multiple words in a batch.
+    /// </summary>
+    /// <param name="dataList">A list of FSRS data updates.</param>
+    /// <returns>No content if successful.</returns>
+    /// <example>
+    /// POST /api/Word/updateBatchFSRS
+    /// [
+    ///     {
+    ///         "id": 1,
+    ///         "state": 2,
+    ///         "step": null,
+    ///         "stability": 3.45,
+    ///         "difficulty": 0.3,
+    ///         "due": "2025-06-15T10:00:00Z",
+    ///         "lastReview": "2025-05-31T10:00:00Z"
+    ///     },
+    ///     {
+    ///         "id": 2,
+    ///         "state": 1,
+    ///         "step": 2,
+    ///         "stability": null,
+    ///         "difficulty": null,
+    ///         "due": "2025-06-01T10:00:00Z",
+    ///         "lastReview": "2025-05-31T10:00:00Z"
+    ///     }
+    /// ]
+    /// </example>
+    [HttpPost("updateBatchFSRS")]
+    public async Task<IActionResult> UpdateBatchFSRSData([FromBody] List<UpdateFSRSDataRequest> dataList)
+    {
+        if (dataList == null || dataList.Count == 0)
+        {
+            return BadRequest("No data provided");
+        }
+
+        var user = await userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Unauthorized("User not authenticated");
+        }
+
+        // Get all word IDs from the request
+        var wordIds = dataList.Select(d => d.Id).ToList();
+
+        // Load all words in a single query
+        var words = await context.Words
+            .Include(w => w.Language)
+            .Where(w => wordIds.Contains(w.Id) && w.Language.UserId == user.Id)
+            .ToListAsync();
+
+        // Dictionary for faster lookup
+        var wordDict = words.ToDictionary(w => w.Id, w => w);
+
+        foreach (var data in dataList)
+        {
+            if (wordDict.TryGetValue(data.Id, out var word))
+            {
+                // Update FSRS fields
+                word.State = data.State;
+                word.Step = data.Step;
+                word.Stability = data.Stability;
+                word.Difficulty = data.Difficulty;
+                word.Due = data.Due;
+                word.LastReview = data.LastReview;
+
+                if (data.FirstReview.HasValue && !word.FirstReview.HasValue)
+                {
+                    word.FirstReview = data.FirstReview;
+                }
+            }
+        }
+
+        await context.SaveChangesAsync();
+        return NoContent();
     }
 }

@@ -4,7 +4,7 @@ import styles from "./Review.module.css";
 import pageStyles from "../Pages.module.css";
 import { Word } from "../../../services/wordService";
 import { WordType } from "../../../services/wordTypeService";
-import { reviewService } from "../../../services/reviewService";
+import { reviewService, ReviewSession } from "../../../services/reviewService";
 import ReviewSummary from "../../Dialogs/ReviewSummary/ReviewSummary";
 import ProgressBar from "./ProgressBar/ProgressBar";
 import AnswerForm from "./AnswerForm/AnswerForm";
@@ -20,17 +20,16 @@ const Review: React.FC = () => {
   const navigate = useNavigate();
   const state = location.state as ReviewLocationState;
 
-  const [words, setWords] = useState<Word[]>([]);
+  const [reviewSession, setReviewSession] = useState<ReviewSession | null>(
+    null
+  );
   const [wordTypes, setWordTypes] = useState<WordType[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [fieldAnswers, setFieldAnswers] = useState<{
     [fieldName: string]: string;
   }>({});
   const [isChecking, setIsChecking] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [incorrectCount, setIncorrectCount] = useState(0);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   useEffect(() => {
@@ -39,7 +38,6 @@ const Review: React.FC = () => {
         navigate("/lessons");
         return;
       }
-
       try {
         setIsLoading(true);
         const reviewData = await reviewService.getReviewData(
@@ -47,7 +45,9 @@ const Review: React.FC = () => {
           state.type
         );
 
-        setWords(reviewData.words);
+        // Initialize review session with the words
+        const session = reviewService.initReviewSession(reviewData.words);
+        setReviewSession(session);
         setWordTypes(reviewData.wordTypes);
       } catch (error) {
         console.error("Error loading review data:", error);
@@ -58,9 +58,12 @@ const Review: React.FC = () => {
 
     loadReviewData();
   }, [state, navigate]);
-
   const getCurrentWord = (): Word | undefined => {
-    return currentIndex < words.length ? words[currentIndex] : undefined;
+    if (!reviewSession) return undefined;
+
+    return reviewSession.currentIndex < reviewSession.reviewQueue.length
+      ? reviewSession.reviewQueue[reviewSession.currentIndex]
+      : undefined;
   };
 
   const getCurrentWordType = (): WordType | undefined => {
@@ -104,10 +107,9 @@ const Review: React.FC = () => {
       }
     }
   };
-
   const handleCheck = () => {
     const currentWord = getCurrentWord();
-    if (!currentWord || !areAllFieldsAnswered()) return;
+    if (!currentWord || !areAllFieldsAnswered() || !reviewSession) return;
 
     setIsChecking(true);
 
@@ -117,38 +119,88 @@ const Review: React.FC = () => {
       .map((field) => field.trim());
     const fieldNames = getFieldNames();
 
-    // Check if all field answers match the expected values
-    const allCorrect = fieldNames.every((fieldName, index) => {
+    // Count how many fields were answered correctly
+    let correctFieldsCount = 0;
+    const totalFieldsCount = fieldNames.length;
+
+    fieldNames.forEach((fieldName, index) => {
       const userValue = fieldAnswers[fieldName]?.toLowerCase().trim() || "";
       const expectedValue = wordFieldsData[index]?.toLowerCase().trim() || "";
-      return userValue === expectedValue;
+      if (userValue === expectedValue) {
+        correctFieldsCount++;
+      }
     });
 
-    if (allCorrect) {
-      setCorrectCount((prevCount) => prevCount + 1);
-      setIsCorrect(true);
-    } else {
-      setIncorrectCount((prevCount) => prevCount + 1);
-      setIsCorrect(false);
-    }
-  };
+    // Store the calculated correctness values for processing in handleNext
+    // This prevents the current card from changing before the user clicks Next
+    const allCorrect = correctFieldsCount === totalFieldsCount;
+    setIsCorrect(allCorrect);
 
+    // Save the FSRS evaluation but don't update the session yet
+    // We'll keep the current word for feedback, then apply changes on Next
+    // Store the correctness data as a session attribute
+    setReviewSession({
+      ...reviewSession,
+      _pendingAnswer: {
+        correctFields: correctFieldsCount,
+        totalFields: totalFieldsCount,
+      },
+    });
+  };
   const handleNext = () => {
-    resetFieldAnswers();
-    setIsChecking(false);
-    setIsCorrect(null);
+    if (!reviewSession) return;
 
-    if (currentIndex + 1 >= words.length) {
-      setIsSummaryOpen(true);
-    } else {
-      setCurrentIndex(currentIndex + 1);
+    // Now we process the actual FSRS logic that we delayed in handleCheck
+    if (reviewSession._pendingAnswer) {
+      const { correctFields, totalFields } = reviewSession._pendingAnswer;
+
+      // Apply FSRS logic and update session
+      const updatedSession = reviewService.processAnswer(
+        reviewSession,
+        correctFields,
+        totalFields
+      );
+
+      // Clear the pending answer and reset for next card
+      resetFieldAnswers();
+      setIsChecking(false);
+      setIsCorrect(null);
+
+      // Check if we've reached the end of the queue
+      if (updatedSession.currentIndex >= updatedSession.reviewQueue.length) {
+        // Complete session and save results
+        reviewService
+          .completeReviewSession(updatedSession)
+          .then(() => {
+            setIsSummaryOpen(true);
+          })
+          .catch((error) => {
+            console.error("Error completing review session:", error);
+          });
+      } else {
+        // Continue to the next card
+        setReviewSession({
+          ...updatedSession,
+          _pendingAnswer: undefined,
+        });
+      }
     }
   };
-
   const handleGiveUp = () => {
+    if (!reviewSession) return;
+
     setIsChecking(true);
     setIsCorrect(false);
-    setIncorrectCount((prevCount) => prevCount + 1);
+
+    // Store zero correct fields as pending answer
+    const fieldNames = getFieldNames();
+    setReviewSession({
+      ...reviewSession,
+      _pendingAnswer: {
+        correctFields: 0,
+        totalFields: fieldNames.length,
+      },
+    });
   };
 
   const handleFinish = () => {
@@ -165,12 +217,11 @@ const Review: React.FC = () => {
       </div>
     );
   }
-
   // Render the review session
   const currentWord = getCurrentWord();
   const currentWordType = getCurrentWordType();
 
-  if (!currentWord || !currentWordType) {
+  if (!currentWord || !currentWordType || !reviewSession) {
     return (
       <div className={pageStyles.container}>
         <div className={styles.loadingContainer}>
@@ -188,10 +239,14 @@ const Review: React.FC = () => {
       </div>
     );
   }
+
   return (
     <div className={pageStyles.container}>
       <div className={styles.reviewContainer}>
-        <ProgressBar currentIndex={currentIndex} totalWords={words.length} />
+        <ProgressBar
+          currentIndex={reviewSession.currentIndex}
+          totalWords={reviewSession.reviewQueue.length}
+        />
 
         {!isChecking ? (
           <AnswerForm
@@ -213,7 +268,17 @@ const Review: React.FC = () => {
             isCorrect={isCorrect}
             onNext={handleNext}
             getFieldNames={getFieldNames}
-            isLastWord={currentIndex + 1 >= words.length}
+            isLastWord={
+              reviewSession.currentIndex >=
+                reviewSession.reviewQueue.length - 1 &&
+              // Check if the current word would be requeued
+              !(
+                isCorrect === false ||
+                (reviewSession._pendingAnswer &&
+                  reviewSession._pendingAnswer.correctFields <
+                    reviewSession._pendingAnswer.totalFields * 0.5)
+              )
+            }
           />
         )}
       </div>
@@ -221,9 +286,9 @@ const Review: React.FC = () => {
       <ReviewSummary
         isOpen={isSummaryOpen}
         onClose={handleFinish}
-        correctCount={correctCount}
-        incorrectCount={incorrectCount}
-        totalWords={words.length}
+        correctCount={reviewSession.correctAnswers}
+        incorrectCount={reviewSession.incorrectAnswers}
+        totalWords={reviewSession.reviewQueue.length}
       />
     </div>
   );
