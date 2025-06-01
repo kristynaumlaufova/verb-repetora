@@ -66,6 +66,7 @@ const Dashboard: React.FC = () => {
       },
     });
   };
+
   if (isLoading) {
     return (
       <main className={styles.pageContent}>

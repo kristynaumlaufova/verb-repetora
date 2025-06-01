@@ -32,13 +32,17 @@ export interface UpdateWordRequest {
 
 export interface UpdateFSRSDataRequest {
   id: number;
-  state: LearningState;
-  step: number | null;
-  stability: number | null;
-  difficulty: number | null;
-  due: string;
-  lastReview: string | null;
-  firstReview?: string | null;
+  wordTypeId: number;
+  languageId: number;
+  keyword: string;
+  fields: string;
+  state?: LearningState;
+  step?: number | null;
+  stability?: number | null;
+  difficulty?: number | null;
+  due?: Date;
+  lastReview?: Date | null;
+  firstReview?: Date | null;
 }
 
 export interface WordQueryParameters {

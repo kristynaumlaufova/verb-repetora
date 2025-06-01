@@ -368,7 +368,6 @@ const nextRecallStability =(
  *
  * @param word - The word being reviewed.
  * @param rating - The chosen rating for the card being reviewed.
- * @param reviewDatetime - The date and time of the review. Must be in UTC if provided.
  * @param reviewDuration - The number of milliseconds it took to review the card or undefined if unspecified.
  * @returns A tuple containing the updated, reviewed word and its corresponding review log.
  * @throws Error if the `reviewDatetime` is not timezone-aware and set to UTC.

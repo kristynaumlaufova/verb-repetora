@@ -35,7 +35,7 @@ const Review: React.FC = () => {
     getCurrentWordType,
     checkAnswer,
     nextQuestion,
-  } = useReviewManager();
+  } = useReviewManager(state.type);
 
   // Initialize review session when component mounts
   useEffect(() => {
@@ -46,7 +46,7 @@ const Review: React.FC = () => {
 
     const initializeReview = async () => {
       try {
-        const data = await loadReviewData(state.lessonIds, state.type);
+        const data = await loadReviewData(state.lessonIds);
 
         if (data) {
           initReviewSession(data);
@@ -110,7 +110,7 @@ const Review: React.FC = () => {
       setFieldAnswers(newFieldAnswers);
 
       // Mark this as incorrect
-      checkAnswer("");
+      checkAnswer("", state.type);
     }
   };
 
@@ -126,12 +126,12 @@ const Review: React.FC = () => {
     const answersString = answersArray.join(";");
 
     // Call the hook's check function
-    checkAnswer(answersString);
+    checkAnswer(answersString, state.type);
   };
 
   // Move to next question
   const handleNext = () => {
-    nextQuestion();
+    nextQuestion(state.type);
     resetFieldAnswers();
   };
 
@@ -188,7 +188,7 @@ const Review: React.FC = () => {
           onClose={handleFinish}
           correctCount={reviewSession?.correctAnswers || 0}
           incorrectCount={reviewSession?.incorrectAnswers || 0}
-          totalWords={reviewSession?.reviewQueue.length || 0}
+          totalWords={reviewSession?.reviewHeap.size() || 0}
         />
       </div>
     );
@@ -199,7 +199,7 @@ const Review: React.FC = () => {
       <div className={styles.reviewContainer}>
         <ProgressBar
           currentIndex={reviewSession.currentIndex}
-          totalWords={reviewSession.reviewQueue.length}
+          totalWords={reviewSession.reviewHeap.size()}
         />
 
         {!isChecking ? (
@@ -223,8 +223,7 @@ const Review: React.FC = () => {
             onNext={handleNext}
             getFieldNames={getFieldNames}
             isLastWord={
-              reviewSession.currentIndex ===
-              reviewSession.reviewQueue.length - 1
+              reviewSession.currentIndex === reviewSession.reviewHeap.size() - 1
             }
           />
         )}

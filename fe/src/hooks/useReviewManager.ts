@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react';
-import { Word } from '../services/wordService';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Word, wordService } from '../services/wordService';
 import { WordType } from '../services/wordTypeService';
 import { reviewService } from '../services/reviewService';
-import { convertRating, reviewWord } from '../helpers/fsrsHelper';
+import { convertRating, reviewWord, ReviewLog } from '../helpers/fsrsHelper';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MinHeap } from '@datastructures-js/heap';
 
 export interface ReviewSession {
-  reviewQueue: Word[];
+  reviewHeap: MinHeap<Word>;
   currentIndex: number;
   correctAnswers: number;
   incorrectAnswers: number;
@@ -21,20 +22,33 @@ export interface ReviewData {
   wordTypes: WordType[];
 }
 
-export const useReviewManager = () => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useReviewManager = (type: string) => {  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [reviewSession, setReviewSession] = useState<ReviewSession | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);  const [isComplete, setIsComplete] = useState(false);
-
-
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+  const [reviewLogs, setReviewLogs] = useState<ReviewLog[]>([]);
+  const reviewStartTimeRef = useRef<number | null>(null);
   const { currentLanguage } = useLanguage();
 
-  const loadReviewData = useCallback(async (lessonIds: number[], type: string): Promise<ReviewData | null> => {
+  // For "recommended" review type - sorts based on due review date
+  const getDueTimeCompare = (word: Word): number => {
+    return word.due ? new Date(word.due).getTime() : 0;
+  };
+
+  // For "all" review type - maintain original (shuffled) order
+  const preserveOrderCompare = (word: Word): number => {
+    return 0; // All words considered equal, so insertion order is preserved
+  };
+
+  const loadReviewData = useCallback(async (lessonIds: number[]): Promise<ReviewData | null> => {
     setIsLoading(true);
     setError(null);
+      // Reset review state
+    setReviewLogs([]);
+    
     try {
       if (!currentLanguage) {
         setError("No language selected");
@@ -43,22 +57,28 @@ export const useReviewManager = () => {
       }
 
       // Get words from the specified lessons
-      const words = type === "all" 
-        ? await reviewService.getWordsForLessons(lessonIds, currentLanguage.id)
-        : await reviewService.getWordsForLessons(lessonIds, currentLanguage.id, true);
+      const filterByDue = type === "recommended";
+      let words = await reviewService.getWordsForLessons(lessonIds, currentLanguage.id, filterByDue);
       
       if (words.length === 0) {
         setError("No words available for review");
         setIsLoading(false);
         return null;
-      }      
+      }        
       
-      if(type === "all") {
-        // Shuffle the words for review
+      // Process words based on review type
+      if (type === "all") {
+        // Shuffle words for review
         reviewService.shuffleWords(words);
+      } else if (type === "recommended") {
+        if (words.length === 0) {
+          setError("No words are due for review");
+          setIsLoading(false);
+          return null;
+        }
       }
       
-      // Get word types for these words
+      // Get word types for words
       const wordTypes = await reviewService.getWordTypesForWords(words, currentLanguage.id);
       
       const data = {
@@ -74,7 +94,7 @@ export const useReviewManager = () => {
       setIsLoading(false);
       return null;
     }
-  }, [currentLanguage]);
+  }, [currentLanguage, type]);
 
   const initReviewSession = useCallback((data?: ReviewData): ReviewSession => {
     const sessionData = data || reviewData;
@@ -82,9 +102,18 @@ export const useReviewManager = () => {
     if (!sessionData) {
       throw new Error("Cannot initialize session: Review data not loaded");
     }
+
+    let reviewHeap: MinHeap<Word>;
+    if(type === "all"){
+      reviewHeap = new MinHeap(preserveOrderCompare);
+    }else{
+      reviewHeap = new MinHeap(getDueTimeCompare);
+    }
+
+    sessionData.words.forEach((word) => reviewHeap.insert(word));
     
     const newSession: ReviewSession = {
-      reviewQueue: sessionData.words,
+      reviewHeap: reviewHeap,
       currentIndex: 0,
       correctAnswers: 0,
       incorrectAnswers: 0
@@ -94,26 +123,50 @@ export const useReviewManager = () => {
     setIsChecking(false);
     setIsCorrect(null);
     setIsComplete(false);
+    // Reset FSRS tracking data
+    setReviewLogs([]);
+    
+    // Start timing for the first word
+    reviewStartTimeRef.current = Date.now();
     
     return newSession;
-  }, [reviewData]);
+  }, [reviewData, type]);  
 
   const getCurrentWord = useCallback((): Word | undefined => {
     if (!reviewSession) return undefined;
+    
+    // Check if there are words in the heap
+    if (reviewSession.reviewHeap.size() === 0) {
+      return undefined;
+    }
+    
+    // Retrieve next word
+    const nextWord = reviewSession.reviewHeap.root();
 
-    return reviewSession.currentIndex < reviewSession.reviewQueue.length
-      ? reviewSession.reviewQueue[reviewSession.currentIndex]
-      : undefined;
-  },[reviewSession]);
+    if(type === "recommended") {
+      // Check if the next word is actually due
+      if (nextWord && nextWord.due) {
+        const dueDate = new Date(nextWord.due);
+        const currentDate = new Date();
+        
+        // If the word is not due yet return undefined
+        if (dueDate > currentDate) {
+          return undefined;
+        }
+      }
+    }
+    
+    return nextWord ?? undefined;
+  },[reviewSession, type]);
 
   const getCurrentWordType = useCallback((): WordType | undefined => {
     const word = getCurrentWord();
     if (!word) return undefined;
 
     return reviewData?.wordTypes.find((type) => type.id === word.wordTypeId);
-  },[getCurrentWord, reviewData?.wordTypes]);
+  },[getCurrentWord, reviewData?.wordTypes]);  
   
-  const checkAnswer = useCallback((answer: string): void => {
+  const checkAnswer = useCallback((answer: string, type: string): void => {
     if (!reviewSession || !getCurrentWord()) return;
     
     setIsChecking(true);
@@ -123,14 +176,28 @@ export const useReviewManager = () => {
     
     // Check how many fields were correct
     const correctFields = reviewService.checkAnswer(answer, correctAnswer);
-    const totalFields = correctAnswer.split(';').length;
+    const totalFields = correctAnswer.split(';').length;    
     
-    // Calculater rating
-    const rating = convertRating(correctFields, totalFields);
-    const fsrsData = reviewWord(currentWord, rating, undefined);
-
-    console.log(fsrsData);
-
+    if(type === "recommended"){
+      // Calculate review duration
+      const reviewDuration = reviewStartTimeRef.current 
+        ? Date.now() - reviewStartTimeRef.current 
+        : undefined;
+      
+      // Convert answer to FSRS rating
+      const rating = convertRating(correctFields, totalFields);
+      
+      // Process with FSRS algorithm
+      const [updatedWord, reviewLog] = reviewWord(currentWord, rating, reviewDuration);
+      
+      // Store review logs
+      setReviewLogs(prev => [...prev, reviewLog]);
+      
+      // Immediately insert the updated word back into the heap
+      reviewSession.reviewHeap.insert(updatedWord);
+    }
+    
+    // Set whether the answer was correct for UI feedback
     setIsCorrect(correctFields === totalFields);
     
     // Update the session with pending answer information
@@ -145,13 +212,30 @@ export const useReviewManager = () => {
         }
       };
     });
-  }, [reviewSession, getCurrentWord]);    
+  }, [reviewSession, getCurrentWord]);  
   
-  const nextQuestion = useCallback((): boolean => {
+  const nextQuestion = useCallback((type: string): boolean => {
     if (!reviewSession) return false;
     
-    // Check if this will be the last question
-    const willBeComplete = (reviewSession.currentIndex + 1) >= reviewSession.reviewQueue.length;
+    // Extract the current word from the heap
+    reviewSession.reviewHeap.extractRoot();
+    
+    // Check if this will be the last question or if next word is not due yet
+    let willBeComplete = reviewSession.reviewHeap.size() === 0;
+    
+    // For recommended review type, check if the next word is actually due
+    if (type === "recommended" && !willBeComplete) {
+      const nextWord = reviewSession.reviewHeap.root();
+      if (nextWord && nextWord.due) {
+        const dueDate = new Date(nextWord.due);
+        const currentDate = new Date();
+        
+        // If the word is not due yet, mark as complete
+        if (dueDate > currentDate) {
+          willBeComplete = true;
+        }
+      }
+    }
     
     // Process the pending answer if there is one
     if (reviewSession.pendingAnswer) {
@@ -182,16 +266,24 @@ export const useReviewManager = () => {
       });
     }
     
+    // Set complete state if no more words or next word is not due
+    if (willBeComplete) {
+      setIsComplete(true);
+
+      if(type === "recommended"){
+        wordService.updateBatchFSRSData(reviewSession.reviewHeap.toArray());
+      }
+    }
+    
     // Reset UI state for the next word
     setIsChecking(false);
     setIsCorrect(null);
     
-    // Set the complete flag if this was the last question
-    if (willBeComplete) {
-      setIsComplete(true);
+    // Reset review start time for the next word
+    if(type === "recommended"){
+      reviewStartTimeRef.current = Date.now();  
     }
-    
-    // Return true if the session is complete
+
     return willBeComplete;
   }, [reviewSession]);
   
@@ -203,15 +295,26 @@ export const useReviewManager = () => {
       ? Math.round((reviewSession.correctAnswers / total) * 100) 
       : 0;
     
+    // Get next due date if available
+    let nextDueDate = null;
+    if (reviewSession.reviewHeap.size() > 0) {
+      const nextWord = reviewSession.reviewHeap.root();
+      if (nextWord && nextWord.due) {
+        nextDueDate = new Date(nextWord.due);
+      }
+    }
+    
     return {
-      totalWords: reviewSession.reviewQueue.length,
+      totalReviewWords: reviewData?.words.length || 0,
+      remainingWords: reviewSession.reviewHeap.size(),
       wordsReviewed: reviewSession.currentIndex,
       correctAnswers: reviewSession.correctAnswers,
       incorrectAnswers: reviewSession.incorrectAnswers,
-      percentCorrect
+      percentCorrect,
+      nextDueDate
     };
-  }, [reviewSession]); 
-  
+  }, [reviewSession, reviewData]);
+
   return {
     isLoading,
     error,
@@ -225,6 +328,7 @@ export const useReviewManager = () => {
     getCurrentWordType,
     checkAnswer,
     nextQuestion,
-    getSessionStats
+    getSessionStats,
+    reviewLogs
   };
 };

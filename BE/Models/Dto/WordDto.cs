@@ -30,14 +30,3 @@ public record UpdateWordRequest(
     string Keyword,
     string Fields
 );
-
-public record UpdateFSRSDataRequest(
-    int Id,
-    LearningState State,
-    int? Step,
-    double? Stability,
-    double? Difficulty,
-    DateTime Due,
-    DateTime? LastReview,
-    DateTime? FirstReview = null
-);

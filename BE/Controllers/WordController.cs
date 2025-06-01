@@ -313,7 +313,9 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         // Filter by due review date
         if (filterByDue)
         {
-            query = query.Where(w => w.Due <= DateTime.UtcNow);
+            query = query
+                .Where(w => w.Due <= DateTime.UtcNow)
+                .OrderBy(w => w.Due);
         }
 
         var words = await query.ToListAsync();
@@ -365,7 +367,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     /// ]
     /// </example>
     [HttpPost("updateBatchFSRS")]
-    public async Task<IActionResult> UpdateBatchFSRSData([FromBody] List<UpdateFSRSDataRequest> dataList)
+    public async Task<IActionResult> UpdateBatchFSRSData([FromBody] List<WordDto> dataList)
     {
         if (dataList == null || dataList.Count == 0)
         {
