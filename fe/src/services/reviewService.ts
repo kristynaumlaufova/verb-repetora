@@ -18,13 +18,19 @@ export interface ReviewData {
   wordTypes: WordType[];
 }
 
-export const reviewService = {
-  getWordsForLessons: async(lessonIds: number[], languageId: number, filterByDue: boolean = false): Promise<Word[]> => {
-    if (!lessonIds || lessonIds.length === 0) {
-      return [];
-    }
-    
+export const reviewService = {  getWordsForLessons: async(lessonIds: number[], languageId: number, filterByDue: boolean = false): Promise<Word[]> => {
     try {
+      // For recommended review type with empty lessonIds, get all due words
+      if (filterByDue && (!lessonIds || lessonIds.length === 0)) {
+        const wordsResponse = await apiClient.post(`/Word/byIds?langId=${languageId}&filterByDue=${filterByDue}`, []);
+        return wordsResponse.data;
+      }
+      
+      // Regular case: get words from specific lessons
+      if (!lessonIds || lessonIds.length === 0) {
+        return [];
+      }
+      
       // Get lessons
       const lessonsResponse = await apiClient.post(`/Lesson/byIds?langId=${languageId}`, lessonIds);
       const lessons = lessonsResponse.data;

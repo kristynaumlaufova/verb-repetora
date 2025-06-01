@@ -39,14 +39,14 @@ const Review: React.FC = () => {
 
   // Initialize review session when component mounts
   useEffect(() => {
-    if (!state || !state.lessonIds || state.lessonIds.length === 0) {
+    if (!state) {
       navigate("/lessons", { replace: true });
       return;
     }
 
     const initializeReview = async () => {
       try {
-        const data = await loadReviewData(state.lessonIds);
+        const data = await loadReviewData(state.lessonIds || []);
 
         if (data) {
           initReviewSession(data);

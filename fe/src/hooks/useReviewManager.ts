@@ -42,7 +42,6 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
   const preserveOrderCompare = (word: Word): number => {
     return 0; // All words considered equal, so insertion order is preserved
   };
-
   const loadReviewData = useCallback(async (lessonIds: number[]): Promise<ReviewData | null> => {
     setIsLoading(true);
     setError(null);
