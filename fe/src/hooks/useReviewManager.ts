@@ -1,17 +1,16 @@
 import { useState, useCallback } from 'react';
-import { Word, convertWordToFSRSRequest } from '../services/wordService';
+import { Word } from '../services/wordService';
 import { WordType } from '../services/wordTypeService';
-import { apiClient } from '../services/apiService';
-import { lessonService } from '../services/lessonService';
-import { wordTypeService } from '../services/wordTypeService';
-import { fsrsService, Rating } from '../services/fsrsService';
+import { reviewService } from '../services/reviewService';
+import { convertRating, reviewWord } from '../helpers/fsrsHelper';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export interface ReviewSession {
   reviewQueue: Word[];
   currentIndex: number;
   correctAnswers: number;
   incorrectAnswers: number;
-  _pendingAnswer?: {
+  pendingAnswer?: {
     correctFields: number;
     totalFields: number;
   };
@@ -25,244 +24,207 @@ export interface ReviewData {
 export const useReviewManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  /**
-   * Shuffles an array of words using Fisher-Yates algorithm
-   */
-  const shuffleWords = useCallback((words: Word[]): Word[] => {
-    const shuffled = [...words];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }, []);
-  
-  /**
-   * Fetches words for the specified lessons
-   */
-  const getWordsForLessons = useCallback(async (lessonIds: number[]): Promise<Word[]> => {
+  const [reviewData, setReviewData] = useState<ReviewData | null>(null);
+  const [reviewSession, setReviewSession] = useState<ReviewSession | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);  const [isComplete, setIsComplete] = useState(false);
+
+
+  const { currentLanguage } = useLanguage();
+
+  const loadReviewData = useCallback(async (lessonIds: number[], type: string): Promise<ReviewData | null> => {
     setIsLoading(true);
     setError(null);
-    
     try {
-      let words: Word[] = [];
+      if (!currentLanguage) {
+        setError("No language selected");
+        setIsLoading(false);
+        return null;
+      }
+
+      // Get words from the specified lessons
+      const words = type === "all" 
+        ? await reviewService.getWordsForLessons(lessonIds, currentLanguage.id)
+        : await reviewService.getWordsForLessons(lessonIds, currentLanguage.id, true);
       
-      for (const lessonId of lessonIds) {
-        try {
-          const lesson = await lessonService.getLesson(lessonId);
-          if (lesson.wordIds && lesson.wordIds.length > 0) {
-            const response = await apiClient.post("/Word/byIds", lesson.wordIds);
-            // Use the convertDtoToWord function from wordService.ts
-            const convertedWords = response?.data.map((dto: any) => ({
-              ...dto,
-              due: dto.due ? new Date(dto.due) : undefined,
-              lastReview: dto.lastReview ? new Date(dto.lastReview) : null,
-              firstReview: dto.firstReview ? new Date(dto.firstReview) : null
-            })) || [];
-            words = [...words, ...convertedWords];
-          }
-        } catch (error) {
-          console.error(`Error fetching words for lesson ${lessonId}:`, error);
-          setError(`Failed to fetch words for lesson ${lessonId}`);
-        }
+      if (words.length === 0) {
+        setError("No words available for review");
+        setIsLoading(false);
+        return null;
+      }      
+      
+      if(type === "all") {
+        // Shuffle the words for review
+        reviewService.shuffleWords(words);
       }
       
-      return shuffleWords(words);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [shuffleWords]);
-  
-  /**
-   * Fetches words that are due for review based on their due date
-   */
-  const getDueWordsForReview = useCallback(async (wordIds: number[]): Promise<Word[]> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Request words with the filterByDue parameter set to true
-      const response = await apiClient.post("/Word/byIds?filterByDue=true", wordIds);
-      // Convert date strings to Date objects
-      return response?.data.map((dto: any) => ({
-        ...dto,
-        due: dto.due ? new Date(dto.due) : undefined,
-        lastReview: dto.lastReview ? new Date(dto.lastReview) : null,
-        firstReview: dto.firstReview ? new Date(dto.firstReview) : null
-      })) || [];
-    } catch (error) {
-      console.error("Error fetching due words:", error);
-      setError("Failed to fetch due words for review");
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-  
-  /**
-   * Gets all word types for the given words
-   */
-  const getWordTypesForWords = useCallback(async (words: Word[]): Promise<WordType[]> => {
-    try {
-      // Get all unique word type IDs from the words
-      const wordTypeIds = Array.from(
-        new Set(words.map(word => word.wordTypeId))
-      );
+      // Get word types for these words
+      const wordTypes = await reviewService.getWordTypesForWords(words, currentLanguage.id);
       
-      return await wordTypeService.getWordTypesByIds(wordTypeIds);
-    } catch (error) {
-      console.error("Failed to fetch word types:", error);
-      setError("Failed to fetch word types");
-      return [];
-    }
-  }, []);
-    /**
-   * Loads review data for the specified lessons
-   */  
-  
-  const getReviewData = useCallback(async (lessonIds: number[], type: "all" | "recommended" = "all", languageId?: number): Promise<ReviewData> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      let words: Word[] = [];
-      
-    // Get words based on the review type
-      if (type === "all") {
-        if (!lessonIds || lessonIds.length === 0) {
-          throw new Error("Lesson IDs are required for 'all' review type");
-        }
-        words = await getWordsForLessons(lessonIds);
-      } else {        // For recommended type with empty lessonIds, fetch all due words
-        if (!lessonIds || lessonIds.length === 0) {
-          // Get all due words and new words regardless of lesson, optionally filtered by language
-          words = []; //await wordService.getDueWords(languageId);
-          
-          // Shuffle the words
-          words = shuffleWords(words);
-          
-          // Shuffle the combined list
-          words = shuffleWords(words);
-        } else {
-          // Get words that are due for review from the specified lessons
-          const allWords = await getWordsForLessons(lessonIds);
-          const wordIds = allWords.map(word => word.id);
-          words = await getDueWordsForReview(wordIds);
-        }
-      }
-      
-      const wordTypes = await getWordTypesForWords(words);
-      
-      return {
-        words,
-        wordTypes
+      const data = {
+        words: words,
+        wordTypes: wordTypes
       };
-    } catch (error) {
-      console.error("Error getting review data:", error);
-      setError("Failed to get review data");
-      throw error;
-    } finally {
+      
+      setReviewData(data);
       setIsLoading(false);
+      return data;
+    } catch (error: any) {
+      setError(error.message || "Failed to load review data");
+      setIsLoading(false);
+      return null;
     }
-  }, [getWordsForLessons, getDueWordsForReview, getWordTypesForWords, shuffleWords]);
-  
-  /**
-   * Initializes a review session with the given words
-   */
-  const initReviewSession = useCallback((words: Word[]): ReviewSession => {
-    return {
-      reviewQueue: [...words],
+  }, [currentLanguage]);
+
+  const initReviewSession = useCallback((data?: ReviewData): ReviewSession => {
+    const sessionData = data || reviewData;
+    
+    if (!sessionData) {
+      throw new Error("Cannot initialize session: Review data not loaded");
+    }
+    
+    const newSession: ReviewSession = {
+      reviewQueue: sessionData.words,
       currentIndex: 0,
       correctAnswers: 0,
       incorrectAnswers: 0
     };
-  }, []);
+    
+    setReviewSession(newSession);
+    setIsChecking(false);
+    setIsCorrect(null);
+    setIsComplete(false);
+    
+    return newSession;
+  }, [reviewData]);
+
+  const getCurrentWord = useCallback((): Word | undefined => {
+    if (!reviewSession) return undefined;
+
+    return reviewSession.currentIndex < reviewSession.reviewQueue.length
+      ? reviewSession.reviewQueue[reviewSession.currentIndex]
+      : undefined;
+  },[reviewSession]);
+
+  const getCurrentWordType = useCallback((): WordType | undefined => {
+    const word = getCurrentWord();
+    if (!word) return undefined;
+
+    return reviewData?.wordTypes.find((type) => type.id === word.wordTypeId);
+  },[getCurrentWord, reviewData?.wordTypes]);
   
-  /**
-   * Process a user's answer for a word in a review session
-   */
-  const processAnswer = useCallback((session: ReviewSession, correctFields: number, totalFields: number): ReviewSession => {
-    // Create a copy to avoid mutating the original
-    const updatedSession = { ...session };
-    const currentWord = updatedSession.reviewQueue[updatedSession.currentIndex];
+  const checkAnswer = useCallback((answer: string): void => {
+    if (!reviewSession || !getCurrentWord()) return;
     
-    if (!currentWord) {
-      return updatedSession;
-    }
+    setIsChecking(true);
     
-    // Calculate rating based on the percentage of correctly answered fields
-    const rating = fsrsService.calculateRating(correctFields, totalFields);
+    const currentWord = getCurrentWord()!;
+    const correctAnswer = currentWord.fields;
     
-    // Update word with FSRS scheduling
-    const updatedWord = fsrsService.applyFSRSScheduler(currentWord, rating);
+    // Check how many fields were correct
+    const correctFields = reviewService.checkAnswer(answer, correctAnswer);
+    const totalFields = correctAnswer.split(';').length;
     
-    // Update the word in the queue
-    updatedSession.reviewQueue[updatedSession.currentIndex] = updatedWord;
+    // Calculater rating
+    const rating = convertRating(correctFields, totalFields);
+    const fsrsData = reviewWord(currentWord, rating, undefined);
+
+    console.log(fsrsData);
+
+    setIsCorrect(correctFields === totalFields);
     
-    // Update session statistics
-    if (rating === Rating.Again || correctFields < totalFields) {
-      updatedSession.incorrectAnswers++;
+    // Update the session with pending answer information
+    setReviewSession(prev => {
+      if (!prev) return null;
+      
+      return {
+        ...prev,
+        pendingAnswer: {
+          correctFields,
+          totalFields
+        }
+      };
+    });
+  }, [reviewSession, getCurrentWord]);    
+  
+  const nextQuestion = useCallback((): boolean => {
+    if (!reviewSession) return false;
+    
+    // Check if this will be the last question
+    const willBeComplete = (reviewSession.currentIndex + 1) >= reviewSession.reviewQueue.length;
+    
+    // Process the pending answer if there is one
+    if (reviewSession.pendingAnswer) {
+      const isFullyCorrect = reviewSession.pendingAnswer.correctFields === 
+                            reviewSession.pendingAnswer.totalFields;
+      
+      // Update session with the answer result
+      setReviewSession(prev => {
+        if (!prev) return null;
+        
+        return {
+          ...prev,
+          correctAnswers: prev.correctAnswers + (isFullyCorrect ? 1 : 0),
+          incorrectAnswers: prev.incorrectAnswers + (isFullyCorrect ? 0 : 1),
+          currentIndex: prev.currentIndex + 1,
+          pendingAnswer: undefined
+        };
+      });
     } else {
-      updatedSession.correctAnswers++;
+      // Move to next word if no pending answer
+      setReviewSession(prev => {
+        if (!prev) return null;
+        
+        return {
+          ...prev,
+          currentIndex: prev.currentIndex + 1,
+        };
+      });
     }
     
-    // If the card was rated "Again" or marked incorrect, reinsert it into the queue
-    if (rating === Rating.Again || correctFields < totalFields * 0.5) {
-      // Calculate delay (number of cards before we see this one again)
-      // For simplicity, we'll place it 3-5 cards later or at the end if that's not possible
-      const queuePosition = Math.min(
-        updatedSession.currentIndex + 3 + Math.floor(Math.random() * 3),
-        updatedSession.reviewQueue.length
-      );
-      
-      // Remove from current position and insert at new position
-      const wordToRequeue = updatedSession.reviewQueue.splice(updatedSession.currentIndex, 1)[0];
-      updatedSession.reviewQueue.splice(queuePosition, 0, wordToRequeue);
-      
-      // Adjust current index (if we remove the current card, we should stay at the same index)
-      // but we don't want to advance yet since we're now looking at a new card
-      return updatedSession;
+    // Reset UI state for the next word
+    setIsChecking(false);
+    setIsCorrect(null);
+    
+    // Set the complete flag if this was the last question
+    if (willBeComplete) {
+      setIsComplete(true);
     }
     
-    // Advance to the next card
-    updatedSession.currentIndex++;
-    
-    return updatedSession;
-  }, []);
+    // Return true if the session is complete
+    return willBeComplete;
+  }, [reviewSession]);
   
-  /**
-   * Completes a review session and sends the updated FSRS data to the server
-   */
-  const completeReviewSession = useCallback(async (session: ReviewSession): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
+  const getSessionStats = useCallback(() => {
+    if (!reviewSession) return null;
     
-    try {
-      // Prepare the update requests for all reviewed words
-      const updateRequests = session.reviewQueue.map(word => convertWordToFSRSRequest(word));
-      
-      // Send batch update to the server
-      await apiClient.post("/Word/updateBatchFSRS", updateRequests);
-      
-      console.log(`Review session completed. Updated ${updateRequests.length} words.`);
-    } catch (error) {
-      console.error("Error completing review session:", error);
-      setError("Failed to save review session data");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    const total = reviewSession.correctAnswers + reviewSession.incorrectAnswers;
+    const percentCorrect = total > 0 
+      ? Math.round((reviewSession.correctAnswers / total) * 100) 
+      : 0;
+    
+    return {
+      totalWords: reviewSession.reviewQueue.length,
+      wordsReviewed: reviewSession.currentIndex,
+      correctAnswers: reviewSession.correctAnswers,
+      incorrectAnswers: reviewSession.incorrectAnswers,
+      percentCorrect
+    };
+  }, [reviewSession]); 
   
   return {
     isLoading,
     error,
-    getReviewData,
+    loadReviewData,
+    reviewSession,
     initReviewSession,
-    processAnswer,
-    completeReviewSession,
+    isChecking,
+    isCorrect,
+    isComplete,
+    getCurrentWord,
+    getCurrentWordType,
+    checkAnswer,
+    nextQuestion,
+    getSessionStats
   };
 };
-
-export default useReviewManager;

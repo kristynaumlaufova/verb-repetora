@@ -137,22 +137,24 @@ export const useWordManager = (langId: number | undefined) => {
       );      
       
       return false;
-    }  };
+    }
+  };
   
-  const getWordsByIds = async (wordIds: number[]): Promise<Word[]> => {
-    if (!wordIds || wordIds.length === 0) {
+  const getWordsByIds = useCallback(async (wordIds: number[]): Promise<Word[]> => {
+    if (!wordIds || wordIds.length === 0 || !langId) {
       return [];
     }
     
     try {
-      return await wordService.getWordsByIds(wordIds);
+      return await wordService.getWordsByIds(wordIds, langId);
     } catch (error: any) {
       setError(
         error.response?.data || "An error occurred while fetching words by IDs"
       );
       return [];
     }
-  };
+  }, [langId]);
+  
   const loadDashboardData = useCallback(async (): Promise<DashboardStats | null> => {
     if (!langId) {
       setError("Language ID is required to load dashboard data");

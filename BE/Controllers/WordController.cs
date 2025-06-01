@@ -281,16 +281,17 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     /// <summary>
     /// Retrieves words by their IDs.
     /// </summary>
+    /// <param name="langId">Required language ID to filter the words.</param>
     /// <param name="wordIds">The IDs of the words to retrieve. If null or empty, retrieves all user's words.</param>
     /// <param name="filterByDue">Whether to filter words by their due date.</param>
-    /// <returns>A list of words matching the provided IDs (or all words if no IDs provided) and optionally due for review.</returns>
+    /// <returns>A list of words matching the provided IDs (or all words if no IDs provided) filtered by language and optionally by due date.</returns>
     /// <example>
-    /// POST /api/Word/byIds?filterByDue=true
+    /// POST /api/Word/byIds?langId=1&filterByDue=true
     /// [1, 2, 3]
     /// </example>
     [Route("byIds")]
     [HttpPost]
-    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromBody] int[]? wordIds, [FromQuery] bool filterByDue = false)
+    public async Task<ActionResult<IEnumerable<WordDto>>> GetWordsByIds([FromQuery] int langId, [FromBody] int[]? wordIds, [FromQuery] bool filterByDue = false)
     {
         var user = await userManager.GetUserAsync(User);
         if (user == null)
@@ -301,14 +302,15 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         var query = context.Words
             .Include(w => w.Language)
             .Include(w => w.WordType)
-            .Where(w => w.Language.UserId == user.Id);
+            .Where(w => w.Language.UserId == user.Id && w.LanguageId == langId);
 
-        // Filter by IDs only if provided
+        // Filter by IDs
         if (wordIds != null && wordIds.Length > 0)
         {
             query = query.Where(w => wordIds.Contains(w.Id));
         }
 
+        // Filter by due review date
         if (filterByDue)
         {
             query = query.Where(w => w.Due <= DateTime.UtcNow);

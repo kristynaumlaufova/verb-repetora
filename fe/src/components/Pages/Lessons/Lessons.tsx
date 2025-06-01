@@ -56,7 +56,6 @@ const Lessons: React.FC = () => {
       setIsCreateModalOpen(false);
     }
   };
-
   const handleEdit = async (lesson: Lesson) => {
     try {
       const lessonData = await lessonService.getLesson(lesson.id);
@@ -85,7 +84,7 @@ const Lessons: React.FC = () => {
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
-      <h1 className={pageStyles.title}>Lessons</h1>{" "}
+      <h1 className={pageStyles.title}>Lessons</h1>
       <div className={styles.buttonGroup}>
         <button
           className={styles.reviewRecommandedButton}
@@ -94,6 +93,7 @@ const Lessons: React.FC = () => {
               state: {
                 lessonIds: selectedLessons,
                 type: "recommended",
+                languageId: currentLanguage?.id,
               },
             })
           }
@@ -108,6 +108,7 @@ const Lessons: React.FC = () => {
               state: {
                 lessonIds: selectedLessons,
                 type: "all",
+                languageId: currentLanguage?.id,
               },
             })
           }

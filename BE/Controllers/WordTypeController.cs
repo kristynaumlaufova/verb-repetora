@@ -224,20 +224,19 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         await context.SaveChangesAsync();
 
         return NoContent();
-    }
-
-    /// <summary>
-    /// Retrieves multiple word types by their IDs.
-    /// </summary>
-    /// <param name="wordTypeIds">An array of word type IDs to retrieve.</param>
-    /// <returns>The requested word types if found.</returns>
-    /// <example>
-    /// POST /api/WordType/byIds
-    /// [1, 2, 3]
-    /// </example>
+    }    /// <summary>
+         /// Retrieves multiple word types by their IDs.
+         /// </summary>
+         /// <param name="langId">Required language ID to filter the word types.</param>
+         /// <param name="wordTypeIds">An array of word type IDs to retrieve.</param>
+         /// <returns>The requested word types if found.</returns>
+         /// <example>
+         /// POST /api/WordType/byIds?langId=1
+         /// [1, 2, 3]
+         /// </example>
     [Route("byIds")]
     [HttpPost]
-    public async Task<ActionResult<IEnumerable<WordTypeDto>>> GetWordTypesByIds([FromBody] int[] wordTypeIds)
+    public async Task<ActionResult<IEnumerable<WordTypeDto>>> GetWordTypesByIds([FromQuery] int langId, [FromBody] int[] wordTypeIds)
     {
         if (wordTypeIds == null || wordTypeIds.Length == 0)
         {
@@ -251,7 +250,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         }
 
         var wordTypes = await context.WordTypes
-            .Where(wt => wordTypeIds.Contains(wt.Id) && wt.UserId == user.Id)
+            .Where(wt => wordTypeIds.Contains(wt.Id) && wt.UserId == user.Id && wt.LangId == langId)
             .ToListAsync();
 
         var wordTypeDtos = wordTypes.Select(wt => ToDto(wt)).ToList();

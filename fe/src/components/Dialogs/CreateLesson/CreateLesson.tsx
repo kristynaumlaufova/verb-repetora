@@ -43,7 +43,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     setSearchResults([]);
     setSelectedWords([]);
   };
-
   // Dialog initialization
   useEffect(() => {
     if (isOpen) {
@@ -53,6 +52,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
       resetDialogState();
     }
   }, [isOpen, initialValue, refreshWords]);
+
   // Load words of current lesson
   useEffect(() => {
     const fetchSelectedWords = async () => {
@@ -60,13 +60,12 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
         isOpen &&
         initialValue &&
         initialValue.wordIds &&
-        initialValue.wordIds.length > 0
+        initialValue.wordIds.length > 0 &&
+        currentLanguage
       ) {
         try {
           const fetchedWords = await getWordsByIds(initialValue.wordIds);
-          if (fetchedWords && fetchedWords.length > 0) {
-            setSelectedWords(fetchedWords);
-          }
+          setSelectedWords(fetchedWords);
         } catch (error) {
           console.error("Error fetching words by IDs:", error);
         }

@@ -99,15 +99,19 @@ export const useWordTypeManager = (langId: number | undefined) => {
       return false;
     }  
   }, [refreshWordTypes]);
-
   const getWordTypesByIds = useCallback(async (wordTypeIds: number[]): Promise<WordType[]> => {
+    if (!langId) {
+      setError("No language selected");
+      return [];
+    }
+    
     try {
-      return await wordTypeService.getWordTypesByIds(wordTypeIds);
+      return await wordTypeService.getWordTypesByIds(wordTypeIds, langId);
     } catch (error: any) {
       setError(error.message || "Failed to fetch word types by IDs");
       return [];
     }
-  }, []);
+  }, [langId]);
 
   // Refresh word types when language changes
   useEffect(() => {

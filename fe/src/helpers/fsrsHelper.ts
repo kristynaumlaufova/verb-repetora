@@ -1,4 +1,4 @@
-import { Word, WordQueryParameters } from "../services/wordService";
+import { Word } from "../services/wordService";
 
 // Model weights of the FSRS algorithm
 let weights = [
@@ -88,6 +88,29 @@ export interface ReviewLog {
   ReviewDateTime: Date,
   ReviewDuration: number | null
 }
+
+/**
+ * Converts the ratio of correctly answered fields to a rating value.
+ * @param correctFields - Number of correctly answered fields
+ * @param totalFields - Total number of fields
+ * @returns Rating value based on the percentage of correct answers:
+ * - <= 25%: Again
+ * - <= 50%: Hard
+ * - <= 75%: Good
+ * - <= 100%: Easy
+ */
+export const convertRating = (correctFields: number, totalFields: number): Rating => {
+  if (correctFields < 0 || totalFields <= 0) {
+      throw new Error("Invalid input: correctFields must be non-negative and totalFields must be positive");
+  }
+  
+  const percentage = (correctFields / totalFields) * 100;
+  
+  if (percentage <= 25) return Rating.Again;
+  if (percentage <= 50) return Rating.Hard;
+  if (percentage <= 75) return Rating.Good;
+  return Rating.Easy;
+};
   
 /**
  * Calculates a current retrievability of word.
@@ -350,29 +373,20 @@ const nextRecallStability =(
  * @returns A tuple containing the updated, reviewed word and its corresponding review log.
  * @throws Error if the `reviewDatetime` is not timezone-aware and set to UTC.
  */
-export const reviewCard = (
+export const reviewWord = (
   word: Word,
   rating: Rating,
-  reviewDatetime?: Date,
   reviewDuration?: number
 ): [Word, ReviewLog] => {
-  // Validate the reviewDatetime is timezone-aware and set to UTC
-  if (reviewDatetime && reviewDatetime.getTimezoneOffset() !== 0) {
-    throw new Error("datetime must be timezone-aware and set to UTC");
-  }
-
   // Create a copy of the word to avoid modifying the original
   const updatedWord = { ...word };
+  const reviewDatetime = new Date();
 
-  // Set review datetime to current time if not provided
-  if (!reviewDatetime) {
-    reviewDatetime = new Date();
-  }
 
   // Calculate days since last review
   let daysSinceLastReview: number | null = null;
   if (updatedWord.lastReview) {
-    const elapsedMilliseconds = reviewDatetime.getTime() - updatedWord.lastReview.getTime();
+    const elapsedMilliseconds = reviewDatetime.getTime() - new Date(updatedWord.lastReview).getTime();
     daysSinceLastReview = Math.floor(elapsedMilliseconds / (1000 * 60 * 60 * 24));
   }
 

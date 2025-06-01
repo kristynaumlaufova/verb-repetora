@@ -42,12 +42,11 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     const response = await apiClient.get(`/WordType/${id}`);
     return response.data;
   },
-
-  getWordTypesByIds: async (wordTypeIds: number[]): Promise<WordType[]> => {
+  getWordTypesByIds: async (wordTypeIds: number[], languageId: number): Promise<WordType[]> => {
     if (!wordTypeIds || wordTypeIds.length === 0) {
       return [];
     }
-    const response = await apiClient.post('/WordType/byIds', wordTypeIds);
+    const response = await apiClient.post(`/WordType/byIds?langId=${languageId}`, wordTypeIds);
     return response.data;
   },
 

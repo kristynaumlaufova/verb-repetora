@@ -208,6 +208,46 @@ namespace BE.Controllers
             await context.SaveChangesAsync(); return NoContent();
         }
 
+        /// <summary>
+        /// Retrieves lessons by their IDs.
+        /// </summary>
+        /// <param name="langId">Required language ID to filter the lessons.</param>
+        /// <param name="lessonIds">The IDs of the lessons to retrieve.</param>
+        /// <returns>A list of lessons matching the provided IDs and filtered by language.</returns>
+        /// <example>
+        /// POST /api/Lesson/byIds?langId=1
+        /// [1, 2, 3]
+        /// </example>
+        [Route("byIds")]
+        [HttpPost]
+        public async Task<ActionResult<IEnumerable<LessonDto>>> GetLessonsByIds([FromQuery] int langId, [FromBody] int[] lessonIds)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            if (lessonIds == null || lessonIds.Length == 0)
+            {
+                return BadRequest("Lesson IDs are required");
+            }
+
+            var query = context.Lessons
+                .Include(l => l.Words)
+                .Where(l => lessonIds.Contains(l.Id) && l.UserId == user.Id);
+            query = query.Where(l => l.LangId == langId);
+
+            var lessons = await query.ToListAsync();
+
+            var lessonDtos = lessons.Select(l => new LessonDto
+            {
+                Id = l.Id,
+                Name = l.Name,
+                LanguageId = l.LangId,
+                WordIds = l.Words.Select(w => w.Id).ToList()
+            }).ToList();
+
+            return Ok(lessonDtos);
+        }
+
         private async Task<Lesson?> GetLessonOfUser(int lessonId, int userId)
         {
             return await context.Lessons
