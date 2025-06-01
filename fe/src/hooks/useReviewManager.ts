@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Word, wordService } from '../services/wordService';
 import { WordType } from '../services/wordTypeService';
 import { reviewService } from '../services/reviewService';
-import { convertRating, reviewWord, ReviewLog } from '../helpers/fsrsHelper';
+import { reviewLogService } from '../services/reviewLogService';
+import { convertRating, reviewWord, ReviewLog, updateFSRSWeights } from '../helpers/fsrsHelper';
 import { useLanguage } from '../contexts/LanguageContext';
 import { MinHeap } from '@datastructures-js/heap';
 
@@ -11,6 +12,7 @@ export interface ReviewSession {
   currentIndex: number;
   correctAnswers: number;
   incorrectAnswers: number;
+  totalWords: number;
   pendingAnswer?: {
     correctFields: number;
     totalFields: number;
@@ -107,15 +109,14 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
       reviewHeap = new MinHeap(preserveOrderCompare);
     }else{
       reviewHeap = new MinHeap(getDueTimeCompare);
-    }
-
-    sessionData.words.forEach((word) => reviewHeap.insert(word));
+    }    sessionData.words.forEach((word) => reviewHeap.insert(word));
     
     const newSession: ReviewSession = {
       reviewHeap: reviewHeap,
       currentIndex: 0,
       correctAnswers: 0,
-      incorrectAnswers: 0
+      incorrectAnswers: 0,
+      totalWords: sessionData.words.length
     };
     
     setReviewSession(newSession);
@@ -265,26 +266,39 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
       });
     }
     
-    // Set complete state if no more words or next word is not due
+  // Set complete state if no more words or next word is not due
     if (willBeComplete) {
       setIsComplete(true);
 
       if(type === "recommended"){
+        // Save FSRS data for words
         wordService.updateBatchFSRSData(reviewSession.reviewHeap.toArray());
+        
+        // Save review logs for optimization
+        if (reviewLogs.length > 0) {
+          reviewLogService.createBatchReviewLogs(reviewLogs)
+            .then(() => {
+              // After saving logs, load optimized weights
+              return reviewLogService.loadWeights();
+            })
+            .then(weights => {
+              if (weights && weights.length > 0) {
+                // Update FSRS weights with the optimized values
+                updateFSRSWeights(weights);
+              }
+            })
+            .catch(err => console.error("Failed to process review logs:", err));
+        }
       }
     }
     
     // Reset UI state for the next word
     setIsChecking(false);
-    setIsCorrect(null);
-    
-    // Reset review start time for the next word
+    setIsCorrect(null);    // Reset review start time for the next word
     if(type === "recommended"){
       reviewStartTimeRef.current = Date.now();  
-    }
-
-    return willBeComplete;
-  }, [reviewSession]);
+    }    return willBeComplete;
+  }, [reviewSession, reviewLogs]);
   
   const getSessionStats = useCallback(() => {
     if (!reviewSession) return null;
@@ -302,17 +316,15 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
         nextDueDate = new Date(nextWord.due);
       }
     }
-    
-    return {
-      totalReviewWords: reviewData?.words.length || 0,
+      return {
+      totalReviewWords: reviewSession.totalWords,
       remainingWords: reviewSession.reviewHeap.size(),
       wordsReviewed: reviewSession.currentIndex,
       correctAnswers: reviewSession.correctAnswers,
       incorrectAnswers: reviewSession.incorrectAnswers,
-      percentCorrect,
-      nextDueDate
+      percentCorrect,      nextDueDate
     };
-  }, [reviewSession, reviewData]);
+  }, [reviewSession]);
 
   return {
     isLoading,

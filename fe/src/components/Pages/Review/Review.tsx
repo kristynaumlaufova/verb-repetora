@@ -188,7 +188,7 @@ const Review: React.FC = () => {
           onClose={handleFinish}
           correctCount={reviewSession?.correctAnswers || 0}
           incorrectCount={reviewSession?.incorrectAnswers || 0}
-          totalWords={reviewSession?.reviewHeap.size() || 0}
+          totalWords={reviewSession?.totalWords || 0}
         />
       </div>
     );
@@ -197,11 +197,11 @@ const Review: React.FC = () => {
   return (
     <div className={pageStyles.container}>
       <div className={styles.reviewContainer}>
+        {" "}
         <ProgressBar
           currentIndex={reviewSession.currentIndex}
-          totalWords={reviewSession.reviewHeap.size()}
+          totalWords={reviewSession.totalWords}
         />
-
         {!isChecking ? (
           <AnswerForm
             currentWord={currentWord}
@@ -223,7 +223,8 @@ const Review: React.FC = () => {
             onNext={handleNext}
             getFieldNames={getFieldNames}
             isLastWord={
-              reviewSession.currentIndex === reviewSession.reviewHeap.size() - 1
+              reviewSession.currentIndex >= reviewSession.totalWords - 1 ||
+              reviewSession.reviewHeap.size() === 0
             }
           />
         )}

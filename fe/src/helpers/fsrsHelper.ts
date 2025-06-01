@@ -25,6 +25,19 @@ let weights = [
     0.2,
 ];
 
+/**
+ * Updates the FSRS weights with optimized values
+ * @param newWeights The optimized weights to use
+ */
+export const updateFSRSWeights = (newWeights: number[]) => {
+  if (newWeights && newWeights.length === weights.length) {
+    weights = [...newWeights];
+    // Update dependent constants
+    DECAY = -weights[20];
+    FACTOR = 0.9 ** (1 / DECAY) - 1;
+  }
+}
+
 // Constants for counting minimal and maximal interval after applying fuzz
 const FUZZ_RANGES = [
     {
@@ -62,11 +75,9 @@ const ENABLE_FUZZING = true;
 // Minimal value of word stability
 const MIN_STABILITY = 0.001;
 
-// Decay constant
-const DECAY = -weights[20];
-
-// Factor constant
-const FACTOR = 0.9 ** (1 / DECAY) - 1;
+// Decay constant and Factor constant - recalculated when weights change
+let DECAY = -weights[20];
+let FACTOR = 0.9 ** (1 / DECAY) - 1;
 
 export enum Rating {
   Again = 1,

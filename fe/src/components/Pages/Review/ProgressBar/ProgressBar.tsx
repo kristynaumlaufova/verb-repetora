@@ -10,13 +10,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   currentIndex,
   totalWords,
 }) => {
-  const progress = ((currentIndex + 1) / totalWords) * 100;
+  const progress = totalWords > 0 ? (currentIndex / totalWords) * 100 : 0;
 
   return (
     <div className={styles.progressContainer}>
       <div className={styles.progressInfo}>
         <span>
-          {currentIndex + 1} of {totalWords}
+          reviewed {currentIndex} of {totalWords}
         </span>
       </div>
       <div className={styles.progressBar}>

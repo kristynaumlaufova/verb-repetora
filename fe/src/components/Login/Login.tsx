@@ -27,7 +27,6 @@ const Login: React.FC = () => {
         <div className={styles.logoContainer}>
           <h1>VerbRepetora</h1>
         </div>
-
         <h2>Sign in</h2>
         {error && <div className={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -55,10 +54,15 @@ const Login: React.FC = () => {
           <button type="submit" className={styles.submitButton}>
             Sign in
           </button>
-        </form>
-
+        </form>{" "}
         <p className={styles.signup}>
-          Don't have an account? <a href="/register">Sign up</a>
+          Don't have an account?{" "}
+          <span
+            className={styles.signupLink}
+            onClick={() => navigate("/register")}
+          >
+            Sign up
+          </span>
         </p>
       </div>
     </div>

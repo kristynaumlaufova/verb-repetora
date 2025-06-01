@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using BE.Data;
 using BE.Models;
 using BE.Models.Dto;
+using BE.Models.Enums;
 
 namespace BE.Controllers;
 
@@ -314,7 +315,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         if (filterByDue)
         {
             query = query
-                .Where(w => w.Due <= DateTime.UtcNow)
+                .Where(w => w.Due <= DateTime.UtcNow || w.State == LearningState.New)
                 .OrderBy(w => w.Due);
         }
 
