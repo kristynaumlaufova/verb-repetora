@@ -12,7 +12,6 @@ const Register: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { register } = useAuth();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -20,7 +19,7 @@ const Register: React.FC = () => {
       await register(formData.username, formData.password, formData.language);
       navigate("/");
     } catch (err: any) {
-      setError(err.response?.data || "Failed to register. Please try again.");
+      setError(err.message ?? "Failed to register. Please try again.");
     }
   };
 

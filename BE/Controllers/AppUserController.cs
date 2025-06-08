@@ -67,15 +67,6 @@ public class AppUserController(
 
         try
         {
-            var existingLanguage = await context.Languages
-                .FirstOrDefaultAsync(l => l.UserId == user.Id && l.Name == request.Language);
-
-            if (existingLanguage != null)
-            {
-                await userManager.DeleteAsync(user);
-                return BadRequest("A language with this name already exists");
-            }
-
             context.Languages.Add(language);
             await context.SaveChangesAsync();
 
@@ -130,35 +121,6 @@ public class AppUserController(
                 Id: user.Id,
                 Username: user.UserName ?? ""
             )
-        ));
-    }
-
-    /// <summary>
-    /// Retrieves a user by their ID.
-    /// </summary>
-    /// <param name="id">The ID of the user to retrieve.</param>
-    /// <returns>The requested user.</returns>
-    /// <example>
-    /// GET /api/AppUser/5
-    /// </example>
-    [Authorize]
-    [HttpGet("{id}")]
-    public async Task<ActionResult<AppUser>> GetUser(int id)
-    {
-        if (User.FindFirstValue(ClaimTypes.NameIdentifier) != id.ToString())
-        {
-            return Forbid();
-        }
-
-        var user = await userManager.FindByIdAsync(id.ToString());
-        if (user == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(new UserDto(
-            Id: user.Id,
-            Username: user.UserName ?? ""
         ));
     }
 

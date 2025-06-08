@@ -9,7 +9,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -17,7 +16,7 @@ const Login: React.FC = () => {
       await login(username, password);
       navigate("/");
     } catch (err: any) {
-      setError("Failed to login. Please try again.");
+      setError(err.message ?? "Failed to login. Please try again.");
     }
   };
 
