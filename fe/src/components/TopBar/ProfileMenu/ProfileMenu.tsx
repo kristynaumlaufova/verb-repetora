@@ -31,7 +31,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({ userName }) => {
   return (
     <div className={styles.userProfile} ref={profileMenuRef}>
       <button className={styles.avatar} onClick={handleProfileClick}>
-        {userName}
+        {userName.charAt(0).toUpperCase()}
       </button>
       {isProfileMenuOpen && (
         <div className={`${styles.dropdown} ${styles.profileDropdown}`}>

@@ -17,14 +17,16 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
   initialValue,
 }) => {
   const [languageName, setLanguageName] = useState("");
+  const [initialLanguageName, setInitialLanguageName] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useClickOutside(modalRef, onClose);
-
   useEffect(() => {
     if (isOpen) {
-      setLanguageName(initialValue || "");
+      const initValue = initialValue || "";
+      setLanguageName(initValue);
+      setInitialLanguageName(initValue);
       inputRef.current?.focus();
     }
   }, [isOpen, initialValue]);
@@ -69,7 +71,11 @@ const CreateLanguage: React.FC<CreateLanguageProps> = ({
             <button
               type="submit"
               className={dialogStyles.createButton}
-              disabled={!languageName.trim()}
+              disabled={
+                !languageName.trim() ||
+                (!!initialValue &&
+                  languageName.trim() === initialLanguageName.trim())
+              }
             >
               {initialValue ? "SAVE" : "CREATE"}
             </button>

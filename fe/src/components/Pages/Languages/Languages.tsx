@@ -51,7 +51,7 @@ const Languages: React.FC = () => {
       setDeleteError("");
     } catch (error: any) {
       setDeleteError(
-        error.response?.data || "Failed to delete language. Please try again."
+        error.message ?? "Failed to delete language. Please try again."
       );
     }
   };
@@ -69,7 +69,7 @@ const Languages: React.FC = () => {
       setCreateError("");
     } catch (error: any) {
       setCreateError(
-        error.response?.data || "Failed to save language. Please try again."
+        error.message ?? "Failed to save language. Please try again."
       );
     }
   };
@@ -116,7 +116,6 @@ const Languages: React.FC = () => {
             </button>
           )}
         </div>
-
         <button
           className={pageStyles.addButton}
           onClick={() => setIsCreateModalOpen(true)}
