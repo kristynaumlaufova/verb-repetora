@@ -158,7 +158,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
               />
             </div>
           </div>
-
           <div className={styles.wordsSection}>
             <label>Add Words</label>
             <div className={styles.searchContainer}>
@@ -168,7 +167,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
                 onChange={handleSearch}
                 className={styles.searchInput}
                 placeholder="Search for words..."
-              />{" "}
+              />
               {!currentLanguage?.id && (
                 <div className={styles.noResults}>
                   Please select a language first.
@@ -202,7 +201,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
                     })
                   )}
                 </div>
-              )}{" "}
+              )}
             </div>
             <div className={styles.selectedWordsContainer}>
               <div className={styles.selectedWordsHeader}>
@@ -234,7 +233,6 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
               </div>
             </div>
           </div>
-
           <div className={dialogStyles.buttonGroup}>
             <button
               type="button"

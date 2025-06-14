@@ -26,6 +26,7 @@ export const useWordTypeManager = (langId: number | undefined) => {
     }
 
     setIsLoading(true);
+
     try {
       const queryParams = {
         langId,
@@ -99,6 +100,7 @@ export const useWordTypeManager = (langId: number | undefined) => {
       return false;
     }  
   }, [refreshWordTypes]);
+  
   const getWordTypesByIds = useCallback(async (wordTypeIds: number[]): Promise<WordType[]> => {
     if (!langId) {
       setError("No language selected");

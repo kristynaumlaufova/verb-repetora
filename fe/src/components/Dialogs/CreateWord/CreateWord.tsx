@@ -45,6 +45,7 @@ const CreateWord: React.FC<CreateWordProps> = ({
       keywordInputRef.current?.focus();
     }
   }, [isOpen, initialWord, wordTypes]);
+
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedType = wordTypes.find(
       (t: WordType) => t.id === parseInt(e.target.value)
@@ -106,7 +107,6 @@ const CreateWord: React.FC<CreateWordProps> = ({
               onChange={handleTypeChange}
               required
             >
-              {" "}
               {wordTypes.map((type: WordType) => (
                 <option key={type.id} value={type.id}>
                   {type.name}

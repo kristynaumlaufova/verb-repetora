@@ -5,14 +5,17 @@ public record WordTypeDto(
     int UserId,
     int LangId,
     string Name,
-    string Fields);
+    string Fields
+);
 
 public record CreateWordTypeRequest(
     int LangId,
     string Name,
-    string Fields);
+    string Fields
+);
 
 public record UpdateWordTypeRequest(
     int Id,
     string Name,
-    string Fields);
+    string Fields
+);

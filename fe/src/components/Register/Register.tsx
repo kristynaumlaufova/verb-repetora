@@ -12,6 +12,7 @@ const Register: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { register } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

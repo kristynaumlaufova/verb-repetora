@@ -142,6 +142,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         {
             return Unauthorized("User not authenticated");
         }
+
         var language = await context.Languages
             .FirstOrDefaultAsync(l => l.Id == request.LanguageId && l.UserId == user.Id);
 
@@ -490,5 +491,11 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     private bool WordExists(int id)
     {
         return context.Words.Any(e => e.Id == id);
+    }
+
+    private async Task<bool> LanguageExists(int langId, int userId)
+    {
+        return await context.Languages
+            .FirstOrDefaultAsync(l => l.Id == langId && l.UserId == userId) != null;
     }
 }

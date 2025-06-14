@@ -18,7 +18,8 @@ export interface ReviewData {
   wordTypes: WordType[];
 }
 
-export const reviewService = {  getWordsForLessons: async(lessonIds: number[], languageId: number, filterByDue: boolean = false): Promise<Word[]> => {
+export const reviewService = {  
+  getWordsForLessons: async(lessonIds: number[], languageId: number, filterByDue: boolean = false): Promise<Word[]> => {
     try {
       // For recommended review type with empty lessonIds, get all due words
       if (filterByDue && (!lessonIds || lessonIds.length === 0)) {
@@ -26,7 +27,7 @@ export const reviewService = {  getWordsForLessons: async(lessonIds: number[], l
         return wordsResponse.data;
       }
       
-      // Regular case: get words from specific lessons
+      // No selected lesson
       if (!lessonIds || lessonIds.length === 0) {
         return [];
       }
@@ -64,7 +65,8 @@ export const reviewService = {  getWordsForLessons: async(lessonIds: number[], l
       [words[i], words[j]] = [words[j], words[i]];
     }
   },  
-    getWordTypesForWords: async(words: Word[], languageId: number): Promise<WordType[]> => {
+
+  getWordTypesForWords: async(words: Word[], languageId: number): Promise<WordType[]> => {
     const wordTypeIds = Array.from(
       new Set(words.map(word => word.wordTypeId))
     );

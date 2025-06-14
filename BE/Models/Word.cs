@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using BE.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace BE.Models;
 
+[Index(nameof(WordTypeId), nameof(Keyword), IsUnique = true)]
 public class Word
 {
     public int Id { get; set; }

@@ -9,6 +9,9 @@ using BE.Models.Dto;
 
 namespace BE.Controllers;
 
+/// <summary>
+/// Controller for word type related operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -121,7 +124,7 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        if (!await LanguageExists(request.LangId))
+        if (!await LanguageExists(request.LangId, user.Id))
         {
             return BadRequest("Language not found");
         }
@@ -224,16 +227,18 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
         await context.SaveChangesAsync();
 
         return NoContent();
-    }    /// <summary>
-         /// Retrieves multiple word types by their IDs.
-         /// </summary>
-         /// <param name="langId">Required language ID to filter the word types.</param>
-         /// <param name="wordTypeIds">An array of word type IDs to retrieve.</param>
-         /// <returns>The requested word types if found.</returns>
-         /// <example>
-         /// POST /api/WordType/byIds?langId=1
-         /// [1, 2, 3]
-         /// </example>
+    }
+
+    /// <summary>
+    /// Retrieves multiple word types by their IDs.
+    /// </summary>
+    /// <param name="langId">Required language ID to filter the word types.</param>
+    /// <param name="wordTypeIds">An array of word type IDs to retrieve.</param>
+    /// <returns>The requested word types if found.</returns>
+    /// <example>
+    /// POST /api/WordType/byIds?langId=1
+    /// [1, 2, 3]
+    /// </example>
     [Route("byIds")]
     [HttpPost]
     public async Task<ActionResult<IEnumerable<WordTypeDto>>> GetWordTypesByIds([FromQuery] int langId, [FromBody] int[] wordTypeIds)
@@ -249,11 +254,10 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
             return Unauthorized("User not authenticated");
         }
 
-        var wordTypes = await context.WordTypes
+        var wordTypeDtos = await context.WordTypes
             .Where(wt => wordTypeIds.Contains(wt.Id) && wt.UserId == user.Id && wt.LangId == langId)
+            .Select(wt => ToDto(wt))
             .ToListAsync();
-
-        var wordTypeDtos = wordTypes.Select(wt => ToDto(wt)).ToList();
 
         return Ok(wordTypeDtos);
     }
@@ -269,19 +273,14 @@ public class WordTypeController(ApplicationDbContext context, UserManager<AppUse
            .FirstOrDefaultAsync(wt => wt.Id == id && wt.UserId == userId);
     }
 
-    private async Task<bool> LanguageExists(int langId)
+    private async Task<bool> LanguageExists(int langId, int userId)
     {
         return await context.Languages
-            .FirstOrDefaultAsync(l => l.Id == langId) != null;
+            .FirstOrDefaultAsync(l => l.Id == langId && l.UserId == userId) != null;
     }
+
     private async Task<bool> IsNameColision(int langId, string name)
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return false;
-        }
-
         return await context.WordTypes
             .FirstOrDefaultAsync(wt =>
                 wt.LangId == langId

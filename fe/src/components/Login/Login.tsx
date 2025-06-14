@@ -9,6 +9,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -39,7 +40,6 @@ const Login: React.FC = () => {
               required
             />
           </div>
-
           <div className={styles.inputGroup}>
             <label htmlFor="password">Password</label>
             <input

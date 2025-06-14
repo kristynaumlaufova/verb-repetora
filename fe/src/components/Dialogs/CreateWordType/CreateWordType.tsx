@@ -96,7 +96,7 @@ const CreateWordType: React.FC<CreateWordTypeProps> = ({
                     onChange={(e) => handleFieldChange(index, e.target.value)}
                     placeholder={`Field ${index + 1}`}
                   />
-                  {fields.length > 1 && (
+                  {fields.length > 1 && !initialWordType && (
                     <button
                       type="button"
                       className={styles.removeFieldButton}
@@ -109,15 +109,17 @@ const CreateWordType: React.FC<CreateWordTypeProps> = ({
                 </div>
               ))}
             </div>
-            <button
-              type="button"
-              className={styles.addFieldButton}
-              onClick={addField}
-              title="Add new field"
-            >
-              <i className="bi bi-plus"></i>
-              Add field
-            </button>
+            {!initialWordType && (
+              <button
+                type="button"
+                className={styles.addFieldButton}
+                onClick={addField}
+                title="Add new field"
+              >
+                <i className="bi bi-plus"></i>
+                Add field
+              </button>
+            )}
           </div>
           <div className={dialogStyles.buttonGroup}>
             <button

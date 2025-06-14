@@ -94,7 +94,6 @@ const WordTypes: React.FC = () => {
             </button>
           )}
         </div>
-
         <button
           className={pageStyles.addButton}
           onClick={() => setIsCreateModalOpen(true)}

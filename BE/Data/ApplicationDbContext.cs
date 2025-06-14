@@ -54,6 +54,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .WithOne(w => w.WordType)
             .HasForeignKey(w => w.WordTypeId)
             .OnDelete(DeleteBehavior.Cascade);
+
         // Configure the many-to-many relationship between Lesson and Word
         modelBuilder.Entity<Lesson>()
             .HasMany(l => l.Words)

@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace BE.Models;
 
+[Index(nameof(UserId), nameof(Name), IsUnique = true)]
 public class Language
 {
     public int Id { get; set; }

@@ -3,20 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 using BE.Data;
-using BE.Controllers;
 using BE.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Establish DB connection
 string connectionString;
 
 if (builder.Environment.IsDevelopment())
 {
+    // Connection for local development
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 }
 else
 {
+    // Connection for produciton environment
     var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
     var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
     var dbName = Environment.GetEnvironmentVariable("DB_NAME");
@@ -31,9 +33,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddControllers();
 
-// Register services
-builder.Services.AddScoped<LanguageController>();
-
 // Set authentication policy
 builder.Services.AddAuthentication(options =>
 {
@@ -42,13 +41,14 @@ builder.Services.AddAuthentication(options =>
     options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
 });
 
+// Set identity settings
 builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 {
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = true;
     options.Password.RequireUppercase = true;
     options.Password.RequiredLength = 8;
+    options.Password.RequireNonAlphanumeric = false; // Enables easier usage of testing account
 
     options.User.RequireUniqueEmail = false;
     options.SignIn.RequireConfirmedEmail = false;
@@ -56,6 +56,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// Set authenticaiton cookie and redirect policy
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = ".AspNetCore.Identity.Application";

@@ -3,6 +3,7 @@ using System;
 using BE.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BE.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250614151445_AddLanguageUniqueConstraint")]
+    partial class AddLanguageUniqueConstraint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,13 +155,12 @@ namespace BE.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LangId");
+
                     b.HasIndex("Name")
                         .IsUnique();
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("LangId", "Name")
-                        .IsUnique();
 
                     b.ToTable("Lessons");
                 });
@@ -237,8 +239,7 @@ namespace BE.Migrations
 
                     b.HasIndex("LanguageId");
 
-                    b.HasIndex("WordTypeId", "Keyword")
-                        .IsUnique();
+                    b.HasIndex("WordTypeId");
 
                     b.ToTable("Words");
                 });

@@ -1,5 +1,8 @@
 import { apiClient } from './apiService';
 
+/**
+ * Represents a word type with its structure and metadata
+ */
 export interface WordType {
   id: number;
   name: string;
@@ -8,6 +11,10 @@ export interface WordType {
   fields: string;
 }
 
+/**
+ * Generic interface for paginated API responses
+ * @template T The type of items in the paginated response
+ */
 export interface PaginatedResponse<T> {
   items: T[];
   totalCount: number;
@@ -15,6 +22,10 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+/**
+ * Query parameters for word type API requests
+ * Used to filter, sort, and paginate word types
+ */
 export interface WordTypeQueryParameters {
   pageNumber?: number;
   pageSize?: number;
@@ -24,7 +35,13 @@ export interface WordTypeQueryParameters {
   langId: number;
 }
 
-export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryParameters): Promise<PaginatedResponse<WordType>> => {
+export const wordTypeService = {  
+  /**
+   * Retrieves a paginated list of word types based on the provided query parameters
+   * @param params - Query parameters for filtering, sorting, and pagination
+   * @returns A promise resolving to a paginated response of word types
+   */
+  getWordTypes: async (params: WordTypeQueryParameters): Promise<PaginatedResponse<WordType>> => {
     const response = await apiClient.get('/WordType', { 
       params: {
         langId: params.langId,
@@ -38,10 +55,22 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     return response.data;
   },
 
+  /**
+   * Retrieves a single word type by its ID
+   * @param id - The ID of the word type to retrieve
+   * @returns A promise resolving to the requested word type
+   */
   getWordType: async (id: number): Promise<WordType> => {
     const response = await apiClient.get(`/WordType/${id}`);
     return response.data;
   },
+  
+  /**
+   * Retrieves multiple word types by their IDs for a specific language
+   * @param wordTypeIds - Array of word type IDs to retrieve
+   * @param languageId - The language ID to filter by
+   * @returns A promise resolving to an array of word types
+   */
   getWordTypesByIds: async (wordTypeIds: number[], languageId: number): Promise<WordType[]> => {
     if (!wordTypeIds || wordTypeIds.length === 0) {
       return [];
@@ -50,6 +79,13 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     return response.data;
   },
 
+  /**
+   * Creates a new word type
+   * @param name - The name of the new word type
+   * @param fields - The fields structure as a string
+   * @param langId - The language ID the word type belongs to
+   * @returns A promise resolving to the created word type
+   */
   createWordType: async (name: string, fields: string, langId: number): Promise<WordType> => {
     const response = await apiClient.post('/WordType', {
       name,
@@ -59,6 +95,13 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     return response.data;
   },
 
+  /**
+   * Updates an existing word type
+   * @param id - The ID of the word type to update
+   * @param name - The updated name for the word type
+   * @param fields - The updated fields structure as a string
+   * @returns A promise resolving to the updated word type
+   */
   updateWordType: async (id: number, name: string, fields: string): Promise<WordType> => {
     const response = await apiClient.put(`/WordType/${id}`, {
       id,
@@ -68,6 +111,11 @@ export const wordTypeService = {  getWordTypes: async (params: WordTypeQueryPara
     return response.data;
   },
 
+  /**
+   * Deletes a word type by its ID
+   * @param id - The ID of the word type to delete
+   * @returns A promise that resolves when the deletion is complete
+   */
   deleteWordType: async (id: number): Promise<void> => {
     await apiClient.delete(`/WordType/${id}`);
   }
