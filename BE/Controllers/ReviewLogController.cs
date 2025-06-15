@@ -117,20 +117,43 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             if (formattedLogs.Count == 0)
             {
                 return Ok(new { message = "No review logs found, using default weights" });
-            }
-
-            // Serialize the review logs
+            }            // Serialize the review logs
             var serializedLogs = JsonSerializer.Serialize(formattedLogs);
 
             // Prepare the Python process
-            var pythonPath = Environment.OSVersion.Platform == PlatformID.Win32NT ? "python" : "python3";
-            var optimizerScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
+            // Check if we're in a Docker environment with virtual env
+            string pythonPath;
+            string optimizerScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
+            string arguments = optimizerScriptPath;
+
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                pythonPath = "python";
+            }
+            else
+            {
+                // Check for the wrapper script first
+                var wrapperScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "run_python.sh");
+                if (System.IO.File.Exists(wrapperScriptPath))
+                {
+                    pythonPath = wrapperScriptPath;
+                    arguments = optimizerScriptPath;
+                }
+                else if (System.IO.File.Exists("/opt/venv/bin/python"))
+                {
+                    pythonPath = "/opt/venv/bin/python";
+                }
+                else
+                {
+                    pythonPath = "python3";
+                }
+            }
 
             // Start Python process
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = pythonPath,
-                Arguments = $"{optimizerScriptPath}",
+                Arguments = arguments,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
