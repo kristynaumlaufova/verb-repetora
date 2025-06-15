@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import styles from "./Review.module.css";
-import pageStyles from "../Pages.module.css";
 import { useReviewManager } from "../../../hooks/useReviewManager";
-import ReviewSummary from "../../Dialogs/ReviewSummary/ReviewSummary";
-import ProgressBar from "./ProgressBar/ProgressBar";
-import AnswerForm from "./AnswerForm/AnswerForm";
-import FeedbackCard from "./FeedbackCard/FeedbackCard";
+import ReviewError from "./ReviewError/ReviewError";
+import NoWordsAvailable from "./NoWordsAvailable/NoWordsAvailable";
+import ReviewLoading from "./ReviewLoading/ReviewLoading";
+import ReviewSessionComponent from "./ReviewSession/ReviewSession";
 
 interface ReviewLocationState {
   lessonIds: number[];
@@ -139,132 +137,49 @@ const Review: React.FC = () => {
     nextQuestion(state.type);
     resetFieldAnswers();
   };
-
   // Render the loading state
   if (isLoading) {
-    return (
-      <div className={pageStyles.container}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingText}>Loading review session...</div>
-        </div>
-      </div>
-    );
+    return <ReviewLoading />;
   }
-
   // Display an error message if something went wrong
   if (error) {
-    return (
-      <div className={pageStyles.container}>
-        <button
-          className={styles.backButton}
-          onClick={handleFinish}
-          title="Cancel review"
-        >
-          <i className="bi bi-arrow-left"></i> Back
-        </button>
-        <div className={styles.loadingContainer}>
-          <div className={styles.errorText}>{error}</div>
-          <button
-            className={styles.finishButton}
-            onClick={handleFinish}
-            style={{ marginTop: "2rem" }}
-          >
-            Back to Lessons
-          </button>
-        </div>
-      </div>
-    );
+    return <ReviewError error={error} onBackClick={handleFinish} />;
   }
-
   // Render the no words review page
   const currentWord = getCurrentWord();
   const currentWordType = getCurrentWordType();
-
   if (!currentWord || !currentWordType || !reviewSession) {
     return (
-      <div className={pageStyles.container}>
-        <button
-          className={styles.backButton}
-          onClick={handleFinish}
-          title="Cancel review"
-        >
-          <i className="bi bi-arrow-left"></i> Back
-        </button>
-        <div className={styles.loadingContainer}>
-          <div className={styles.loadingText}>
-            No words available for review.
-          </div>
-          <button
-            className={styles.finishButton}
-            onClick={handleFinish}
-            style={{ marginTop: "2rem" }}
-          >
-            Back to Lessons
-          </button>
-        </div>
-        <ReviewSummary
-          isOpen={isComplete}
-          onClose={handleFinish}
-          correctCount={reviewSession?.correctAnswers || 0}
-          incorrectCount={reviewSession?.incorrectAnswers || 0}
-          totalWords={reviewSession?.totalWords || 0}
-          reviewType={state.type}
-        />
-      </div>
+      <NoWordsAvailable
+        isComplete={isComplete}
+        onBackClick={handleFinish}
+        reviewSession={reviewSession}
+        reviewType={state.type}
+      />
     );
   }
 
   // Render review session
   return (
-    <div className={pageStyles.container}>
-      <button
-        className={styles.backButton}
-        onClick={handleBackClick}
-        title="Cancel review"
-      >
-        <i className="bi bi-arrow-left"></i> Back
-      </button>
-      <div className={styles.reviewContainer}>
-        <ProgressBar
-          currentIndex={reviewSession.currentIndex}
-          totalWords={reviewSession.totalWords}
-        />
-        {!isChecking ? (
-          <AnswerForm
-            currentWord={currentWord}
-            currentWordType={currentWordType}
-            fieldAnswers={fieldAnswers}
-            onFieldChange={handleFieldChange}
-            onCheck={handleCheck}
-            onGiveUp={handleGiveUp}
-            onKeyDown={handleKeyDown}
-            areAllFieldsAnswered={areAllFieldsAnswered()}
-            getFieldNames={getFieldNames}
-          />
-        ) : (
-          <FeedbackCard
-            currentWord={currentWord}
-            currentWordType={currentWordType}
-            fieldAnswers={fieldAnswers}
-            isCorrect={isCorrect}
-            onNext={handleNext}
-            getFieldNames={getFieldNames}
-            isLastWord={
-              reviewSession.currentIndex >= reviewSession.totalWords - 1 ||
-              reviewSession.reviewHeap.size() === 0
-            }
-          />
-        )}
-      </div>{" "}
-      <ReviewSummary
-        isOpen={isComplete}
-        onClose={handleFinish}
-        correctCount={reviewSession.correctAnswers}
-        incorrectCount={reviewSession.incorrectAnswers}
-        totalWords={reviewSession.totalWords}
-        reviewType={state.type}
-      />
-    </div>
+    <ReviewSessionComponent
+      reviewSession={reviewSession}
+      currentWord={currentWord}
+      currentWordType={currentWordType}
+      isChecking={isChecking}
+      isCorrect={isCorrect}
+      isComplete={isComplete}
+      fieldAnswers={fieldAnswers}
+      reviewType={state.type}
+      onFieldChange={handleFieldChange}
+      onCheck={handleCheck}
+      onGiveUp={handleGiveUp}
+      onKeyDown={handleKeyDown}
+      onNext={handleNext}
+      onBackClick={handleBackClick}
+      onFinish={handleFinish}
+      getFieldNames={getFieldNames}
+      areAllFieldsAnswered={areAllFieldsAnswered()}
+    />
   );
 };
 

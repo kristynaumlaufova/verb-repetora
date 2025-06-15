@@ -41,11 +41,9 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({
 
   return (
     <div className={styles.feedbackCardContainer}>
-      {" "}
       <div className={styles.wordCard}>
         <div className={styles.wordType}>{currentWordType.name}</div>
         <div className={styles.wordKeyword}>{currentWord.keyword}</div>
-
         <div className={styles.scrollableContent}>
           <div className={styles.wordDetails}>
             {getFieldNames().map((fieldName, index) => {
@@ -75,9 +73,8 @@ const FeedbackCard: React.FC<FeedbackCardProps> = ({
             >
               {isCorrect ? "Correct!" : "Incorrect!"}
             </div>
-          )}{" "}
+          )}
           <div className={styles.buttonGroup}>
-            {" "}
             <button
               className={styles.nextButton}
               onClick={onNext}

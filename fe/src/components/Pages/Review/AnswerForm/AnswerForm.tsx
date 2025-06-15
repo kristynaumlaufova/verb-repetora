@@ -47,12 +47,10 @@ const AnswerForm: React.FC<AnswerFormProps> = ({
             />
           </div>
         ))}
-
         <div className={styles.buttonGroup}>
           <button className={styles.giveUpButton} onClick={onGiveUp}>
             Give Up
           </button>
-
           <button
             className={styles.checkButton}
             onClick={onCheck}
