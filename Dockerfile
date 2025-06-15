@@ -38,6 +38,18 @@ RUN ls -la build/static/
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app .
+
+# Install Python and required packages for FSRS
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python requirements.txt separately for better caching
+COPY BE/fsrs/requirements.txt ./fsrs/
+# Install Python dependencies
+RUN pip3 install -r ./fsrs/requirements.txt
+
 # Create wwwroot directory
 RUN mkdir -p wwwroot
 COPY --from=frontend /frontend/build/ ./wwwroot/

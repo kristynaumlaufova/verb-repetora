@@ -99,82 +99,73 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
         try
         {
             // Get all review logs for words that belong to the current user
-            var reviewLogs = await context.ReviewLogs
+            var formattedLogs = await context.ReviewLogs
                 .Include(rl => rl.Word)
                 .ThenInclude(w => w.Language)
                 .Where(rl => rl.Word.Language.UserId == user.Id)
                 .OrderBy(rl => rl.ReviewDateTime)
+                .Take(10000) //Takes most recent 10000 thousand records
+                .Select(rl => new
+                {
+                    card_id = rl.WordId,
+                    rating = (int)rl.Rating,
+                    review_datetime = rl.ReviewDateTime.ToString("o"), // ISO 8601 format
+                    review_duration = rl.ReviewDuration
+                })
                 .ToListAsync();
 
-            if (reviewLogs.Count == 0)
+            if (formattedLogs.Count == 0)
             {
                 return Ok(new { message = "No review logs found, using default weights" });
             }
 
-            // Create data structure for optimizer.py in the format it expects
-            var formattedLogs = reviewLogs.Select(rl => new
+            // Serialize the review logs
+            var serializedLogs = JsonSerializer.Serialize(formattedLogs);
+
+            // Prepare the Python process
+            var pythonPath = Environment.OSVersion.Platform == PlatformID.Win32NT ? "python" : "python3";
+            var optimizerScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
+
+            // Start Python process
+            var processStartInfo = new ProcessStartInfo
             {
-                card_id = rl.WordId,
-                rating = (int)rl.Rating,
-                review_datetime = rl.ReviewDateTime.ToString("o"), // ISO 8601 format
-                review_duration = rl.ReviewDuration
-            }).ToList();
+                FileName = pythonPath,
+                Arguments = $"{optimizerScriptPath}",
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
 
-            // Write review logs to temporary file
-            var tempFilePath = Path.GetTempFileName();
-            await System.IO.File.WriteAllTextAsync(tempFilePath, JsonSerializer.Serialize(formattedLogs));
+            using var process = new Process { StartInfo = processStartInfo };
+            process.Start();
 
+            // Write serialized data directly to the Python process's standard input
+            await process.StandardInput.WriteAsync(serializedLogs);
+            process.StandardInput.Close();
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                logger.LogError("Python script error: {Error}", error);
+                return StatusCode(500, "Error optimizing weights");
+            }
+
+            // Parse the output to get optimized weights
             try
             {
-                // Prepare the Python process
-                var pythonPath = "python"; // Assume Python is in PATH, otherwise use full path
-                var optimizerScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
-
-                // Start Python process
-                var processStartInfo = new ProcessStartInfo
-                {
-                    FileName = pythonPath,
-                    Arguments = $"{optimizerScriptPath} {tempFilePath}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var process = new Process { StartInfo = processStartInfo };
-                process.Start();
-
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
-
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
-                {
-                    logger.LogError("Python script error: {Error}", error);
-                    return StatusCode(500, "Error optimizing weights");
-                }
-
-                // Parse the output to get optimized weights
-                // Assume the optimizer.py outputs the weights as a JSON array
-                try
-                {
-                    var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
-                    return Ok(new { weights = optimizedWeights });
-                }
-                catch (JsonException ex)
-                {
-                    logger.LogError(ex, "Error parsing optimizer output: {Output}", output);
-                    return StatusCode(500, "Error parsing optimizer output");
-                }
+                var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
+                return Ok(new { weights = optimizedWeights });
             }
-            finally
+            catch (JsonException ex)
             {
-                // Clean up temporary file
-                if (System.IO.File.Exists(tempFilePath))
-                {
-                    System.IO.File.Delete(tempFilePath);
-                }
+                logger.LogError(ex, "Error parsing optimizer output: {Output}", output);
+                return StatusCode(500, "Error parsing optimizer output");
             }
         }
         catch (Exception ex)

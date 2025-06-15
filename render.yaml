@@ -1,0 +1,39 @@
+services:
+  # A web service to serve the .NET application
+  - type: web
+    name: vocabulary-app
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: vocabulary-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: vocabulary-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: vocabulary-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: vocabulary-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: vocabulary-db
+          property: password
+      - key: PYTHONUNBUFFERED
+        value: 1
+
+databases:
+  - name: vocabulary-db
+    plan: standard
+    databaseName: vocabulary
+    ipAllowList: []
