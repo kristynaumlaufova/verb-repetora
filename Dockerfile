@@ -53,10 +53,17 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy Python requirements.txt separately for better caching
 COPY BE/fsrs/requirements.txt ./fsrs/
 COPY BE/fsrs/run_python.sh ./fsrs/
-RUN chmod +x ./fsrs/run_python.sh
+COPY BE/fsrs/check_environment.sh ./fsrs/
+RUN chmod +x ./fsrs/run_python.sh ./fsrs/check_environment.sh
 
 # Install Python dependencies in the virtual environment
 RUN pip3 install --no-cache-dir -r ./fsrs/requirements.txt
+
+# Add diagnostic script to verify Python environment
+RUN echo '#!/bin/bash\necho "Python version:"\npython3 --version\necho "PIP version:"\npip3 --version\necho "Installed packages:"\npip3 list\necho "Testing imports:"\npython3 -c "import sys; print(sys.path); import pandas; print(f\"pandas version: {pandas.__version__}\"); import torch; print(f\"torch version: {torch.__version__}\"); import numpy; print(f\"numpy version: {numpy.__version__}\")"' > /app/check_python.sh && chmod +x /app/check_python.sh
+
+# Run the diagnostic script during build to verify environment
+RUN /app/check_python.sh || echo "Warning: Python environment check failed but continuing build"
 
 # Create wwwroot directory
 RUN mkdir -p wwwroot

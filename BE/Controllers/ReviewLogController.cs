@@ -169,32 +169,171 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             process.StandardInput.Close();
 
             var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-
-            await process.WaitForExitAsync();
+            var error = await process.StandardError.ReadToEndAsync(); await process.WaitForExitAsync();
 
             if (process.ExitCode != 0)
             {
                 logger.LogError("Python script error: {Error}", error);
-                return StatusCode(500, "Error optimizing weights");
+                return StatusCode(500, new { message = "Error optimizing weights", details = error });
             }
 
             // Parse the output to get optimized weights
             try
             {
+                if (string.IsNullOrWhiteSpace(output))
+                {
+                    logger.LogError("Empty output from Python script");
+                    return StatusCode(500, new { message = "Empty output from Python script", details = "The Python script didn't produce any output." });
+                }
+
+                logger.LogInformation("Python script output: {Output}", output);
                 var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
+
+                if (optimizedWeights == null || optimizedWeights.Count == 0)
+                {
+                    logger.LogError("No weights returned from Python script");
+                    return StatusCode(500, new { message = "No weights returned from Python script", details = output });
+                }
+
                 return Ok(new { weights = optimizedWeights });
             }
             catch (JsonException ex)
             {
                 logger.LogError(ex, "Error parsing optimizer output: {Output}", output);
-                return StatusCode(500, "Error parsing optimizer output");
+                return StatusCode(500, new { message = "Error parsing optimizer output", details = output, error = ex.Message });
             }
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error optimizing weights");
-            return StatusCode(500, "An error occurred while optimizing weights");
+            return StatusCode(500, new { message = "An error occurred while optimizing weights", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Diagnostic endpoint to check Python environment.
+    /// </summary>
+    /// <returns>Diagnostic information about the Python environment.</returns>
+    /// <example>
+    /// GET /api/ReviewLog/diagnostics
+    /// </example>
+    [HttpGet("diagnostics")]
+    public async Task<ActionResult<object>> CheckPythonEnvironment()
+    {
+        try
+        {
+            var diagnosticInfo = new Dictionary<string, string>();
+
+            // Check if Python is available
+            string pythonPath;
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                pythonPath = "python";
+            }
+            else
+            {
+                var wrapperScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "run_python.sh");
+                if (System.IO.File.Exists(wrapperScriptPath))
+                {
+                    pythonPath = wrapperScriptPath;
+                    diagnosticInfo["wrapper"] = "Using wrapper script";
+                }
+                else if (System.IO.File.Exists("/opt/venv/bin/python"))
+                {
+                    pythonPath = "/opt/venv/bin/python";
+                    diagnosticInfo["venv"] = "Using virtual env";
+                }
+                else
+                {
+                    pythonPath = "python3";
+                    diagnosticInfo["system"] = "Using system Python";
+                }
+            }
+
+            // Check Python version
+            var versionProcess = new ProcessStartInfo
+            {
+                FileName = pythonPath,
+                Arguments = "-c \"import sys; print(sys.version)\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process1 = new Process { StartInfo = versionProcess };
+            process1.Start();
+            var versionOutput = await process1.StandardOutput.ReadToEndAsync();
+            var versionError = await process1.StandardError.ReadToEndAsync();
+            await process1.WaitForExitAsync();
+            diagnosticInfo["python_version"] = versionOutput.Trim();
+
+            if (!string.IsNullOrEmpty(versionError))
+            {
+                diagnosticInfo["version_error"] = versionError.Trim();
+            }
+
+            // Check installed packages
+            var packagesProcess = new ProcessStartInfo
+            {
+                FileName = pythonPath,
+                Arguments = "-c \"import sys; import pkg_resources; print('\\n'.join([f'{pkg.key}=={pkg.version}' for pkg in pkg_resources.working_set]))\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process2 = new Process { StartInfo = packagesProcess };
+            process2.Start();
+            var packagesOutput = await process2.StandardOutput.ReadToEndAsync();
+            var packagesError = await process2.StandardError.ReadToEndAsync();
+            await process2.WaitForExitAsync();
+            diagnosticInfo["installed_packages"] = packagesOutput.Trim();
+
+            if (!string.IsNullOrEmpty(packagesError))
+            {
+                diagnosticInfo["packages_error"] = packagesError.Trim();
+            }
+
+            // Try to import torch and pandas
+            var importProcess = new ProcessStartInfo
+            {
+                FileName = pythonPath,
+                Arguments = "-c \"try: import pandas; print(f'pandas={pandas.__version__}'); except Exception as e: print(f'pandas_error={str(e)}'); try: import torch; print(f'torch={torch.__version__}'); except Exception as e: print(f'torch_error={str(e)}')\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process3 = new Process { StartInfo = importProcess };
+            process3.Start();
+            var importOutput = await process3.StandardOutput.ReadToEndAsync();
+            var importError = await process3.StandardError.ReadToEndAsync();
+            await process3.WaitForExitAsync();
+            diagnosticInfo["import_test"] = importOutput.Trim();
+
+            if (!string.IsNullOrEmpty(importError))
+            {
+                diagnosticInfo["import_error"] = importError.Trim();
+            }
+
+            // Check if the optimizer.py file exists
+            var optimizerPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
+            diagnosticInfo["optimizer_exists"] = System.IO.File.Exists(optimizerPath).ToString();
+
+            if (System.IO.File.Exists(optimizerPath))
+            {
+                diagnosticInfo["optimizer_size"] = new FileInfo(optimizerPath).Length.ToString() + " bytes";
+            }
+
+            return Ok(diagnosticInfo);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking Python environment");
+            return StatusCode(500, new { error = "Error checking Python environment", details = ex.ToString() });
         }
     }
 }
