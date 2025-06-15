@@ -1,7 +1,11 @@
 import { apiClient } from "./apiService";
 import { Word } from "./wordService";
 import { WordType, wordTypeService } from "./wordTypeService";
+import { lessonService } from "./lessonService";
 
+/**
+ * Interface representing a review session with its state
+ */
 export interface ReviewSession {
   reviewQueue: Word[];
   currentIndex: number;
@@ -13,12 +17,22 @@ export interface ReviewSession {
   };
 }
 
+/**
+ * Interface for review data containing words and their word types
+ */
 export interface ReviewData {
   words: Word[];
   wordTypes: WordType[];
 }
 
-export const reviewService = {  
+export const reviewService = {    
+  /**
+   * Retrieves words for review from specified lessons
+   * @param lessonIds Array of lesson IDs to get words from
+   * @param languageId Language ID to filter words
+   * @param filterByDue Whether to only include words due for review
+   * @returns Promise with array of words for review
+   */
   getWordsForLessons: async(lessonIds: number[], languageId: number, filterByDue: boolean = false): Promise<Word[]> => {
     try {
       // For recommended review type with empty lessonIds, get all due words
@@ -33,8 +47,7 @@ export const reviewService = {
       }
       
       // Get lessons
-      const lessonsResponse = await apiClient.post(`/Lesson/byIds?langId=${languageId}`, lessonIds);
-      const lessons = lessonsResponse.data;
+      const lessons = await lessonService.getLessonsById(lessonIds, languageId);
       
       // Extract all word IDs
       const allWordIds = lessons.reduce((ids: number[], lesson: any) => {
@@ -56,16 +69,26 @@ export const reviewService = {
       console.error(`Error fetching words for lessons:`, error);
       return [];
     }
-  },
-  
+  },  
+
+  /**
+   * Shuffles an array of words in place using Fisher-Yates algorithm
+   * @param words Array of words to shuffle
+   */
   shuffleWords: (words: Word[]) => {
     // Fisher-Yates shuffle algorithm
     for (let i = words.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [words[i], words[j]] = [words[j], words[i]];
     }
-  },  
+  },
 
+  /**
+   * Retrieves word types for a collection of words
+   * @param words Array of words to get word types for
+   * @param languageId Language ID to filter word types
+   * @returns Promise with array of word types
+   */
   getWordTypesForWords: async(words: Word[], languageId: number): Promise<WordType[]> => {
     const wordTypeIds = Array.from(
       new Set(words.map(word => word.wordTypeId))
@@ -81,6 +104,12 @@ export const reviewService = {
     return wordTypes;
   },
   
+    /**
+   * Checks a user's answer against the correct answer
+   * @param userAnswer The user's input answer (semicolon-separated fields)
+   * @param correctAnswer The correct answer (semicolon-separated fields)
+   * @returns Number of correctly matched fields
+   */
   checkAnswer: (userAnswer: string, correctAnswer: string): number => {
     const userFields = userAnswer.trim().split(';').map(field => field.trim());
     const correctFields = correctAnswer.trim().split(';').map(field => field.trim());

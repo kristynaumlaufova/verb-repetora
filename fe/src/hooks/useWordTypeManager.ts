@@ -1,6 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { wordTypeService, WordType, WordTypeQueryParameters } from '../services/wordTypeService';
 
+/**
+ * Hook for managing word types in the application
+ * Provides functionality for loading, creating, updating, and deleting word types
+ * as well as searching and pagination
+ * 
+ * @param langId - Optional language ID to filter word types by
+ * @returns An object containing word type data and functions to manage word types
+ */
 export const useWordTypeManager = (langId: number | undefined) => {
   const [wordTypes, setWordTypes] = useState<WordType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +20,12 @@ export const useWordTypeManager = (langId: number | undefined) => {
 
   const pageSize = 10;
 
+  /**
+   * Refreshes the word type list with optional query parameters
+   * Resets pagination when language changes
+   * 
+   * @param params - Optional query parameters for filtering and pagination
+   */
   const refreshWordTypes = useCallback(async (params?: Partial<WordTypeQueryParameters>) => {
     if (!langId) {
       setWordTypes([]);
@@ -58,6 +72,12 @@ export const useWordTypeManager = (langId: number | undefined) => {
     }
   }, [langId, pageNumber, pageSize]);
 
+  /**
+   * Deletes a word type by its ID
+   * 
+   * @param id - The ID of the word type to delete
+   * @returns Promise that resolves to true if deletion was successful, false otherwise
+   */
   const deleteWordType = useCallback(async (id: number) => {
     try {
       await wordTypeService.deleteWordType(id);
@@ -70,6 +90,13 @@ export const useWordTypeManager = (langId: number | undefined) => {
     }
   }, [refreshWordTypes]);
 
+  /**
+   * Creates a new word type
+   * 
+   * @param name - The name of the word type
+   * @param fields - The field structure for the word type
+   * @returns Promise that resolves to true if creation was successful, false otherwise
+   */
   const createWordType = useCallback(async (name: string, fields: string) => {
     if (!langId) return false;
 
@@ -83,7 +110,11 @@ export const useWordTypeManager = (langId: number | undefined) => {
       return false;
     }
   }, [langId, refreshWordTypes]);
-
+  
+  /**
+   * Loads more word types using pagination
+   * Only loads if not already loading and there are more items to load
+   */
   const loadMore = useCallback(async () => {
     if (isLoading || wordTypes.length >= totalCount) return;
     await refreshWordTypes({ pageNumber: pageNumber + 1 });

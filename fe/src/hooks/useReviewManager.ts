@@ -7,6 +7,9 @@ import { convertRating, reviewWord, ReviewLog, updateFSRSWeights } from '../help
 import { useLanguage } from '../contexts/LanguageContext';
 import { MinHeap } from '@datastructures-js/heap';
 
+/**
+ * Interface representing the current state of a review session
+ */
 export interface ReviewSession {
   reviewHeap: MinHeap<Word>;
   currentIndex: number;
@@ -19,12 +22,23 @@ export interface ReviewSession {
   };
 }
 
+/**
+ * Interface containing data needed for a review session
+ */
 export interface ReviewData {
   words: Word[];
   wordTypes: WordType[];
 }
 
-export const useReviewManager = (type: string) => {  const [isLoading, setIsLoading] = useState(false);
+/**
+ * Hook for managing spaced repetition review sessions
+ * Provides functionality for loading words, checking answers, and managing the review process
+ * 
+ * @param type - The type of review session ("all" or "recommended")
+ * @returns An object containing review session state and functions to manage the review process
+ */
+export const useReviewManager = (type: string) => {  
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [reviewSession, setReviewSession] = useState<ReviewSession | null>(null);
@@ -35,16 +49,34 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
   const reviewStartTimeRef = useRef<number | null>(null);
   const { currentLanguage } = useLanguage();
 
-  // For "recommended" review type - sorts based on due review date
+  /**
+   * Comparison function for sorting words based on their due date
+   * Used for "recommended" review type
+   * 
+   * @param word - The word to get the comparison value for
+   * @returns The timestamp of the word's due date
+   */
   const getDueTimeCompare = (word: Word): number => {
     return word.due ? new Date(word.due).getTime() : 0;
   };
 
-  // For "all" review type - maintain original (shuffled) order
+  /**
+   * Comparison function that preserves the original order of words
+   * Used for "all" review type, maintains orginial (shuffled) order
+   * 
+   * @param word - The word to get the comparison value for
+   * @returns Always returns 0 to maintain insertion order
+   */
   const preserveOrderCompare = (word: Word): number => {
     return 0; // All words considered equal, so insertion order is preserved
   };
-  
+
+    /**
+   * Loads words and word types for review from specified lessons
+   * 
+   * @param lessonIds - Array of lesson IDs to load words from
+   * @returns Promise with review data or null if loading failed
+   */
   const loadReviewData = useCallback(async (lessonIds: number[]): Promise<ReviewData | null> => {
     setIsLoading(true);
     setError(null);
@@ -98,6 +130,13 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
     }
   }, [currentLanguage, type]);
 
+    /**
+   * Initializes a new review session with the provided review data
+   * 
+   * @param data - Optional review data to use (defaults to stored reviewData)
+   * @returns The newly created review session
+   * @throws Error if review data is not available
+   */
   const initReviewSession = useCallback((data?: ReviewData): ReviewSession => {
     const sessionData = data || reviewData;
     
@@ -110,7 +149,8 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
       reviewHeap = new MinHeap(preserveOrderCompare);
     }else{
       reviewHeap = new MinHeap(getDueTimeCompare);
-    }    sessionData.words.forEach((word) => reviewHeap.insert(word));
+    }    
+    sessionData.words.forEach((word) => reviewHeap.insert(word));
     
     const newSession: ReviewSession = {
       reviewHeap: reviewHeap,
@@ -124,15 +164,19 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
     setIsChecking(false);
     setIsCorrect(null);
     setIsComplete(false);
-    // Reset FSRS tracking data
     setReviewLogs([]);
     
     // Start timing for the first word
     reviewStartTimeRef.current = Date.now();
     
     return newSession;
-  }, [reviewData, type]);  
+  }, [reviewData, type]);
 
+  /**
+   * Gets the current word to be reviewed
+   * 
+   * @returns The current word or undefined if none is available
+   */
   const getCurrentWord = useCallback((): Word | undefined => {
     if (!reviewSession) return undefined;
     
@@ -160,13 +204,25 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
     return nextWord ?? undefined;
   },[reviewSession, type]);
 
+  /**
+   * Gets the word type for the current word
+   * 
+   * @returns The word type of the current word or undefined if not found
+   */
   const getCurrentWordType = useCallback((): WordType | undefined => {
     const word = getCurrentWord();
     if (!word) return undefined;
 
     return reviewData?.wordTypes.find((type) => type.id === word.wordTypeId);
-  },[getCurrentWord, reviewData?.wordTypes]);  
-  
+  },[getCurrentWord, reviewData?.wordTypes]);
+
+    /**
+   * Checks a user's answer against the correct answer for the current word
+   * For "recommended" review type, also updates the word's FSRS data
+   * 
+   * @param answer - The user's answer to check
+   * @param type - The type of review session ("all" or "recommended")
+   */
   const checkAnswer = useCallback((answer: string, type: string): void => {
     if (!reviewSession || !getCurrentWord()) return;
     
@@ -194,7 +250,7 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
       // Store review logs
       setReviewLogs(prev => [...prev, reviewLog]);
       
-      // Immediately insert the updated word back into the heap
+      // Insert the updated word back into the heap
       reviewSession.reviewHeap.insert(updatedWord);
     }
     
@@ -213,8 +269,47 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
         }
       };
     });
-  }, [reviewSession, getCurrentWord]);  
-  
+  }, [reviewSession, getCurrentWord]);
+
+  /**
+   * Completes the current review session
+   * Handles FSRS data updates and review log submissions for "recommended" type
+   * Sets the session as complete to show the summary screen
+   */
+  const completeSession = useCallback (() => {
+    // For "recommended" type, save FSRS data
+    if (type === "recommended" && reviewSession) {
+      // Save FSRS data for words
+      wordService.updateBatchFSRSData(reviewSession.reviewHeap.toArray());
+      
+      // Save review logs for optimization
+      if (reviewLogs.length > 0) {
+        reviewLogService.createBatchReviewLogs(reviewLogs)
+          .then(() => {
+            // After saving logs, load optimized weights
+            return reviewLogService.loadWeights();
+          })
+          .then(weights => {
+            if (weights && weights.length > 0) {
+              // Update FSRS weights with the optimized values
+              updateFSRSWeights(weights);
+            }
+          })
+          .catch(err => console.error("Failed to process review logs:", err));
+      }
+    }
+    
+    // Mark the session as complete
+    setIsComplete(true);
+  }, [reviewLogs, reviewSession, type]);
+
+    /**
+   * Moves to the next question in the review session
+   * Updates session stats and processes the current word's FSRS data
+   * 
+   * @param type - The type of review session ("all" or "recommended")
+   * @returns True if the session is complete after this operation, false otherwise
+   */
   const nextQuestion = useCallback((type: string): boolean => {
     if (!reviewSession) return false;
     
@@ -264,43 +359,31 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
           ...prev,
           currentIndex: prev.currentIndex + 1,
         };
-      });
+      });    
     }
     
   // Set complete state if no more words or next word is not due
     if (willBeComplete) {
-      setIsComplete(true);
-
-      if(type === "recommended"){
-        // Save FSRS data for words
-        wordService.updateBatchFSRSData(reviewSession.reviewHeap.toArray());
-        
-        // Save review logs for optimization
-        if (reviewLogs.length > 0) {
-          reviewLogService.createBatchReviewLogs(reviewLogs)
-            .then(() => {
-              // After saving logs, load optimized weights
-              return reviewLogService.loadWeights();
-            })
-            .then(weights => {
-              if (weights && weights.length > 0) {
-                // Update FSRS weights with the optimized values
-                updateFSRSWeights(weights);
-              }
-            })
-            .catch(err => console.error("Failed to process review logs:", err));
-        }
-      }
+      completeSession();
     }
     
     // Reset UI state for the next word
     setIsChecking(false);
-    setIsCorrect(null);    // Reset review start time for the next word
+    setIsCorrect(null);
+
+    // Reset review start time for the next word
     if(type === "recommended"){
       reviewStartTimeRef.current = Date.now();  
-    }    return willBeComplete;
-  }, [reviewSession, reviewLogs]);
-  
+    }
+    
+    return willBeComplete;
+  }, [reviewSession, completeSession]);
+
+    /**
+   * Gets statistics about the current review session
+   * 
+   * @returns An object containing session statistics or null if no session exists
+   */
   const getSessionStats = useCallback(() => {
     if (!reviewSession) return null;
     
@@ -317,14 +400,17 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
         nextDueDate = new Date(nextWord.due);
       }
     }
-      return {
+    
+    return {
       totalReviewWords: reviewSession.totalWords,
       remainingWords: reviewSession.reviewHeap.size(),
       wordsReviewed: reviewSession.currentIndex,
       correctAnswers: reviewSession.correctAnswers,
       incorrectAnswers: reviewSession.incorrectAnswers,
-      percentCorrect,      nextDueDate
+      percentCorrect,
+      nextDueDate
     };
+  
   }, [reviewSession]);
 
   return {
@@ -341,6 +427,7 @@ export const useReviewManager = (type: string) => {  const [isLoading, setIsLoad
     checkAnswer,
     nextQuestion,
     getSessionStats,
-    reviewLogs
+    reviewLogs,
+    completeSession
   };
 };

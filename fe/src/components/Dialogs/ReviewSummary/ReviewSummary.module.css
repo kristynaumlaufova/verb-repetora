@@ -8,6 +8,12 @@
   margin: 1.5rem 0;
 }
 
+.summaryStatsRecommended {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
 .statItem {
   display: flex;
   flex-direction: column;
@@ -33,7 +39,7 @@
   color: var(--danger-dark);
 }
 
-.total {
+.reviewed {
   color: var(--text);
 }
 

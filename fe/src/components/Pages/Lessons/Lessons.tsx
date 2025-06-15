@@ -56,6 +56,7 @@ const Lessons: React.FC = () => {
       setIsCreateModalOpen(false);
     }
   };
+
   const handleEdit = async (lesson: Lesson) => {
     try {
       const lessonData = await lessonService.getLesson(lesson.id);

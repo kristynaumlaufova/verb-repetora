@@ -21,7 +21,6 @@ const Review: React.FC = () => {
   const [fieldAnswers, setFieldAnswers] = useState<{
     [fieldName: string]: string;
   }>({});
-
   const {
     isLoading,
     error,
@@ -35,6 +34,7 @@ const Review: React.FC = () => {
     getCurrentWordType,
     checkAnswer,
     nextQuestion,
+    completeSession,
   } = useReviewManager(state.type);
 
   // Initialize review session when component mounts
@@ -85,6 +85,7 @@ const Review: React.FC = () => {
         fieldAnswers[field] !== undefined && fieldAnswers[field].trim() !== ""
     );
   };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -95,7 +96,6 @@ const Review: React.FC = () => {
   };
 
   const handleGiveUp = () => {
-    // Fill in all answers with correct values
     const currentWord = getCurrentWord();
     const fieldNames = getFieldNames();
 
@@ -109,8 +109,15 @@ const Review: React.FC = () => {
 
       setFieldAnswers(newFieldAnswers);
 
-      // Mark this as incorrect
       checkAnswer("", state.type);
+    }
+  };
+
+  const handleBackClick = () => {
+    if (reviewSession) {
+      completeSession();
+    } else {
+      navigate("/lessons");
     }
   };
 
@@ -118,14 +125,12 @@ const Review: React.FC = () => {
     navigate("/lessons");
   };
 
-  // Handle form submission to check the answer
   const handleCheck = () => {
     // Convert field answers to semicolon-separated string
     const fieldNames = getFieldNames();
     const answersArray = fieldNames.map((field) => fieldAnswers[field] || "");
     const answersString = answersArray.join(";");
 
-    // Call the hook's check function
     checkAnswer(answersString, state.type);
   };
 
@@ -150,6 +155,13 @@ const Review: React.FC = () => {
   if (error) {
     return (
       <div className={pageStyles.container}>
+        <button
+          className={styles.backButton}
+          onClick={handleFinish}
+          title="Cancel review"
+        >
+          <i className="bi bi-arrow-left"></i> Back
+        </button>
         <div className={styles.loadingContainer}>
           <div className={styles.errorText}>{error}</div>
           <button
@@ -164,13 +176,20 @@ const Review: React.FC = () => {
     );
   }
 
-  // Render the review session
+  // Render the no words review page
   const currentWord = getCurrentWord();
   const currentWordType = getCurrentWordType();
 
   if (!currentWord || !currentWordType || !reviewSession) {
     return (
       <div className={pageStyles.container}>
+        <button
+          className={styles.backButton}
+          onClick={handleFinish}
+          title="Cancel review"
+        >
+          <i className="bi bi-arrow-left"></i> Back
+        </button>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingText}>
             No words available for review.
@@ -189,15 +208,23 @@ const Review: React.FC = () => {
           correctCount={reviewSession?.correctAnswers || 0}
           incorrectCount={reviewSession?.incorrectAnswers || 0}
           totalWords={reviewSession?.totalWords || 0}
+          reviewType={state.type}
         />
       </div>
     );
   }
 
+  // Render review session
   return (
     <div className={pageStyles.container}>
+      <button
+        className={styles.backButton}
+        onClick={handleBackClick}
+        title="Cancel review"
+      >
+        <i className="bi bi-arrow-left"></i> Back
+      </button>
       <div className={styles.reviewContainer}>
-        {" "}
         <ProgressBar
           currentIndex={reviewSession.currentIndex}
           totalWords={reviewSession.totalWords}
@@ -228,7 +255,15 @@ const Review: React.FC = () => {
             }
           />
         )}
-      </div>
+      </div>{" "}
+      <ReviewSummary
+        isOpen={isComplete}
+        onClose={handleFinish}
+        correctCount={reviewSession.correctAnswers}
+        incorrectCount={reviewSession.incorrectAnswers}
+        totalWords={reviewSession.totalWords}
+        reviewType={state.type}
+      />
     </div>
   );
 };

@@ -7,6 +7,14 @@ import {
   DashboardStats,
 } from "../services/wordService";
 
+/**
+ * Hook for managing words in the application
+ * Provides functionality for loading, creating, updating, and deleting words
+ * as well as searching and pagination
+ * 
+ * @param langId - Optional language ID to filter words by
+ * @returns An object containing word data and functions to manage words
+ */
 export const useWordManager = (langId: number | undefined) => {
   const [words, setWords] = useState<Word[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -16,7 +24,12 @@ export const useWordManager = (langId: number | undefined) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   
   const pageSize = 10;
-  
+
+    /**
+   * Refreshes the word list with optional search term
+   * 
+   * @param search - Optional search term to filter words
+   */
   const refreshWords = useCallback(async (search?: string) => {
     if (!langId) return;
 
@@ -48,6 +61,10 @@ export const useWordManager = (langId: number | undefined) => {
     }
   }, [langId, searchTerm]);
 
+  /**
+   * Loads more words using pagination
+   * Fetches the next page of words and appends them to the existing list
+   */
   const loadMore = async () => {
     if (!langId || isLoading || words.length >= totalCount) {
        return;
@@ -75,6 +92,14 @@ export const useWordManager = (langId: number | undefined) => {
     }
   };
 
+  /**
+   * Creates a new word
+   * 
+   * @param wordTypeId - The ID of the word type for the new word
+   * @param keyword - The keyword for the new word
+   * @param fields - The fields for the new word (translations, definitions, etc.)
+   * @returns Promise that resolves to true if creation was successful, false otherwise
+   */
   const createWord = async (
     wordTypeId: number,
     keyword: string,
@@ -101,6 +126,15 @@ export const useWordManager = (langId: number | undefined) => {
     }
   };
 
+  /**
+   * Updates an existing word
+   * 
+   * @param id - The ID of the word to update
+   * @param wordTypeId - The updated word type ID
+   * @param keyword - The updated keyword
+   * @param fields - The updated fields
+   * @returns Promise that resolves to true if update was successful, false otherwise
+   */
   const updateWord = async (
     id: number,
     wordTypeId: number,
@@ -126,6 +160,12 @@ export const useWordManager = (langId: number | undefined) => {
     }
   };
 
+  /**
+   * Deletes a word by its ID
+   * 
+   * @param id - The ID of the word to delete
+   * @returns Promise that resolves to true if deletion was successful, false otherwise
+   */
   const deleteWord = async (id: number): Promise<boolean> => {
     try {
       await wordService.deleteWord(id);
@@ -139,7 +179,13 @@ export const useWordManager = (langId: number | undefined) => {
       return false;
     }
   };
-  
+
+    /**
+   * Retrieves multiple words by their IDs
+   * 
+   * @param wordIds - Array of word IDs to retrieve
+   * @returns Promise with array of found words
+   */
   const getWordsByIds = useCallback(async (wordIds: number[]): Promise<Word[]> => {
     if (!wordIds || wordIds.length === 0 || !langId) {
       return [];
@@ -155,6 +201,11 @@ export const useWordManager = (langId: number | undefined) => {
     }
   }, [langId]);
   
+    /**
+   * Loads dashboard statistics for the current language
+   * 
+   * @returns Promise with dashboard statistics or null if loading failed
+   */
   const loadDashboardData = useCallback(async (): Promise<DashboardStats | null> => {
     if (!langId) {
       setError("Language ID is required to load dashboard data");

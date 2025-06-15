@@ -43,6 +43,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     setSearchResults([]);
     setSelectedWords([]);
   };
+
   // Dialog initialization
   useEffect(() => {
     if (isOpen) {
@@ -116,6 +117,7 @@ const CreateLesson: React.FC<CreateLessonProps> = ({
     const selectedWordIds = selectedWords.map((word) => word.id);
     await onCreateLesson(lessonName.trim(), selectedWordIds);
   };
+
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     refreshWords(e.target.value);

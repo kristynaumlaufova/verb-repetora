@@ -2,6 +2,13 @@ import { useState, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Lesson, lessonService } from '../services/lessonService';
 
+/**
+ * Hook for managing lessons in the application
+ * Provides functionality for loading, creating, updating, and deleting lessons
+ * as well as managing lesson selection state
+ * 
+ * @returns An object containing lesson data and functions to manage lessons
+ */
 export const useLessonManager = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);  
   const [isLoading, setIsLoading] = useState(true);
@@ -10,6 +17,9 @@ export const useLessonManager = () => {
 
   const { currentLanguage } = useLanguage();
 
+  /**
+   * Loads lessons for the current language
+   */
   const loadLessons = useCallback(async () => {
     if (!currentLanguage) return;
     try {
@@ -23,6 +33,9 @@ export const useLessonManager = () => {
     }
   }, [currentLanguage]);
 
+  /**
+   * Refreshes lesson data with loading state indicator
+   */
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -32,6 +45,13 @@ export const useLessonManager = () => {
     }
   }, [loadLessons]);  
   
+  /**
+   * Creates a new lesson
+   * 
+   * @param name - The name of the lesson to create
+   * @param wordIds - Optional array of word IDs to include in the lesson
+   * @returns The ID of the newly created lesson, or null if creation failed
+   */
   const createLesson = useCallback(async (name: string, wordIds: number[] = []) => {
     if (!currentLanguage || !name.trim()) return null;
     try {
@@ -49,6 +69,12 @@ export const useLessonManager = () => {
     }
   }, [currentLanguage, loadLessons]);
 
+  /**
+   * Deletes a lesson by ID
+   * 
+   * @param lessonId - The ID of the lesson to delete
+   * @returns True if deletion was successful, false otherwise
+   */
   const deleteLesson = useCallback(async (lessonId: number) => {
     try {
       await lessonService.deleteLesson(lessonId);
@@ -61,6 +87,14 @@ export const useLessonManager = () => {
     }
   }, [loadLessons]);
 
+  /**
+   * Updates an existing lesson
+   * 
+   * @param lessonId - The ID of the lesson to update
+   * @param name - The new name for the lesson
+   * @param wordIds - Optional array of word IDs to include in the updated lesson
+   * @returns True if update was successful, false otherwise
+   */
   const updateLesson = useCallback(async (lessonId: number, name: string, wordIds: number[] = []) => {
     if (!name.trim()) return false;
     try {
@@ -74,6 +108,11 @@ export const useLessonManager = () => {
     }
   }, [loadLessons]);
 
+  /**
+   * Toggles the selection state of a lesson
+   * 
+   * @param lessonId - The ID of the lesson to toggle selection for
+   */
   const toggleLessonSelection = useCallback((lessonId: number) => {
     setSelectedLessons((prevSelected) => {
       if (prevSelected.includes(lessonId)) {
@@ -81,7 +120,7 @@ export const useLessonManager = () => {
       } else {
         return [...prevSelected, lessonId];
       }
-    });
+    });  
   }, []);
 
   return {

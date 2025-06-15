@@ -36,6 +36,21 @@ const Vocabulary: React.FC = () => {
     currentLanguage?.id
   );
 
+  useEffect(() => {
+    if (!areWordTypesLoading) {
+      refreshWords();
+    }
+  }, [refreshWords, areWordTypesLoading]);
+
+  // Cleanup the search timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
+
   const handleModalClose = () => {
     setIsCreateModalOpen(false);
     setEditingWord(null);
@@ -58,6 +73,7 @@ const Vocabulary: React.FC = () => {
       setDeletingWord(null);
     }
   };
+
   const handleCreateOrUpdate = async (
     wordTypeId: number,
     keyword: string,
@@ -91,24 +107,10 @@ const Vocabulary: React.FC = () => {
     }, 600);
   };
 
-  useEffect(() => {
-    if (!areWordTypesLoading) {
-      refreshWords();
-    }
-  }, [refreshWords, areWordTypesLoading]);
-
-  // Cleanup the search timeout when component unmounts
-  useEffect(() => {
-    return () => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-    };
-  }, []);
-
   const getWordType = (wordTypeId: number): WordType | undefined => {
     return wordTypes.find((type) => type.id === wordTypeId);
   };
+
   return (
     <div className={pageStyles.container}>
       {error && <div className={pageStyles.errorNotification}>{error}</div>}
@@ -170,7 +172,7 @@ const Vocabulary: React.FC = () => {
                 />
               );
             })
-          )}{" "}
+          )}
           {words && words.length < totalCount && (
             <button
               className={pageStyles.loadMoreButton}
@@ -181,7 +183,6 @@ const Vocabulary: React.FC = () => {
             </button>
           )}
         </div>
-
         <button
           className={pageStyles.addButton}
           onClick={() => setIsCreateModalOpen(true)}

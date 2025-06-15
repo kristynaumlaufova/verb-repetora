@@ -139,7 +139,17 @@ const getWordRetrievability = ( word: Word): number => {
       return 0;
     }
 
-    const elapsedMilliseconds = currentDatetime.getTime() - word.lastReview.getTime();
+    // Ensure lastReview is a Date object
+    const lastReviewDate = word.lastReview instanceof Date 
+      ? word.lastReview 
+      : new Date(word.lastReview);
+    
+    // Handle invalid date
+    if (isNaN(lastReviewDate.getTime())) {
+      return 0;
+    }
+
+    const elapsedMilliseconds = currentDatetime.getTime() - lastReviewDate.getTime();
     const elapsedDays = Math.max(0, Math.floor(elapsedMilliseconds / (1000 * 60 * 60 * 24)));
 
     return Math.pow(1 + FACTOR * elapsedDays / word.stability , DECAY);
@@ -392,12 +402,19 @@ export const reviewWord = (
   const updatedWord = { ...word };
   const reviewDatetime = new Date();
 
-
   // Calculate days since last review
   let daysSinceLastReview: number | null = null;
   if (updatedWord.lastReview) {
-    const elapsedMilliseconds = reviewDatetime.getTime() - new Date(updatedWord.lastReview).getTime();
-    daysSinceLastReview = Math.floor(elapsedMilliseconds / (1000 * 60 * 60 * 24));
+    // Ensure lastReview is a Date object
+    const lastReviewDate = updatedWord.lastReview instanceof Date 
+      ? updatedWord.lastReview 
+      : new Date(updatedWord.lastReview);
+    
+    // Handle invalid date
+    if (!isNaN(lastReviewDate.getTime())) {
+      const elapsedMilliseconds = reviewDatetime.getTime() - lastReviewDate.getTime();
+      daysSinceLastReview = Math.floor(elapsedMilliseconds / (1000 * 60 * 60 * 24));
+    }
   }
 
   let nextIntervalValue: number;

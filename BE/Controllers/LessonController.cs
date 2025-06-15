@@ -145,7 +145,7 @@ namespace BE.Controllers
                 Id = lesson.Id,
                 Name = lesson.Name,
                 LanguageId = lesson.LangId,
-                WordIds = lesson.Words.Select(w => w.Id).ToList()
+                WordIds = [.. lesson.Words.Select(w => w.Id)]
             });
         }
 
