@@ -117,30 +117,16 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             if (formattedLogs.Count == 0)
             {
                 return Ok(new { message = "No review logs found, using default weights" });
-            }            // Serialize the review logs
-            var serializedLogs = JsonSerializer.Serialize(formattedLogs);            // Prepare the Python process
-            // Check if we're in a Docker environment with virtual env
+            }
+
+            // Serialize the review logs
+            var serializedLogs = JsonSerializer.Serialize(formattedLogs);
+
+            // Prepare the Python process
             string pythonPath;
             string currentDirectory = Directory.GetCurrentDirectory();
             string optimizerScriptPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
             string arguments = optimizerScriptPath;
-
-            // Log the paths for debugging
-            logger.LogInformation("Current directory: {CurrentDir}", currentDirectory);
-            logger.LogInformation("Looking for optimizer script at: {OptimizerPath}", optimizerScriptPath);
-            logger.LogInformation("Optimizer script exists: {Exists}", System.IO.File.Exists(optimizerScriptPath));
-
-            // List the contents of the fsrs directory for debugging
-            string fsrsDir = Path.Combine(currentDirectory, "fsrs");
-            if (Directory.Exists(fsrsDir))
-            {
-                var files = Directory.GetFiles(fsrsDir);
-                logger.LogInformation("Files in fsrs directory: {Files}", string.Join(", ", files));
-            }
-            else
-            {
-                logger.LogWarning("fsrs directory does not exist at {FsrsDir}", fsrsDir);
-            }
 
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
@@ -148,27 +134,11 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             }
             else
             {
-                // Check for the wrapper script first
-                var wrapperScriptPath = Path.Combine(currentDirectory, "fsrs", "run_python.sh");
-                if (System.IO.File.Exists(wrapperScriptPath))
-                {
-                    pythonPath = wrapperScriptPath;
-                    // Use absolute path to the optimizer script
-                    arguments = optimizerScriptPath;
+                pythonPath = "/opt/venv/bin/python";
 
-                    logger.LogInformation("Using wrapper script: {WrapperPath}", wrapperScriptPath);
-                }
-                else if (System.IO.File.Exists("/opt/venv/bin/python"))
-                {
-                    pythonPath = "/opt/venv/bin/python";
-                    logger.LogInformation("Using virtual environment Python");
-                }
-                else
-                {
-                    pythonPath = "python3";
-                    logger.LogInformation("Using system Python");
-                }
-            }            // Start Python process
+            }
+
+            // Start Python process
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = pythonPath,
@@ -178,19 +148,19 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                // Set the working directory to ensure relative paths work
                 WorkingDirectory = currentDirectory
             };
 
             using var process = new Process { StartInfo = processStartInfo };
             process.Start();
 
-            // Write serialized data directly to the Python process's standard input
             await process.StandardInput.WriteAsync(serializedLogs);
             process.StandardInput.Close();
 
             var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync(); await process.WaitForExitAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync();
 
             if (process.ExitCode != 0)
             {
@@ -203,16 +173,13 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             {
                 if (string.IsNullOrWhiteSpace(output))
                 {
-                    logger.LogError("Empty output from Python script");
                     return StatusCode(500, new { message = "Empty output from Python script", details = "The Python script didn't produce any output." });
                 }
 
-                logger.LogInformation("Python script output: {Output}", output);
                 var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
 
                 if (optimizedWeights == null || optimizedWeights.Count == 0)
                 {
-                    logger.LogError("No weights returned from Python script");
                     return StatusCode(500, new { message = "No weights returned from Python script", details = output });
                 }
 
@@ -220,245 +187,12 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             }
             catch (JsonException ex)
             {
-                logger.LogError(ex, "Error parsing optimizer output: {Output}", output);
                 return StatusCode(500, new { message = "Error parsing optimizer output", details = output, error = ex.Message });
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error optimizing weights");
             return StatusCode(500, new { message = "An error occurred while optimizing weights", details = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Diagnostic endpoint to check Python environment.
-    /// </summary>
-    /// <returns>Diagnostic information about the Python environment.</returns>
-    /// <example>
-    /// GET /api/ReviewLog/diagnostics
-    /// </example>
-    [HttpGet("diagnostics")]
-    public async Task<ActionResult<object>> CheckPythonEnvironment()
-    {
-        try
-        {
-            var diagnosticInfo = new Dictionary<string, string>();
-
-            // Check if Python is available
-            string pythonPath;
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                pythonPath = "python";
-            }
-            else
-            {
-                var wrapperScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "run_python.sh");
-                if (System.IO.File.Exists(wrapperScriptPath))
-                {
-                    pythonPath = wrapperScriptPath;
-                    diagnosticInfo["wrapper"] = "Using wrapper script";
-                }
-                else if (System.IO.File.Exists("/opt/venv/bin/python"))
-                {
-                    pythonPath = "/opt/venv/bin/python";
-                    diagnosticInfo["venv"] = "Using virtual env";
-                }
-                else
-                {
-                    pythonPath = "python3";
-                    diagnosticInfo["system"] = "Using system Python";
-                }
-            }
-
-            // Check Python version
-            var versionProcess = new ProcessStartInfo
-            {
-                FileName = pythonPath,
-                Arguments = "-c \"import sys; print(sys.version)\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process1 = new Process { StartInfo = versionProcess };
-            process1.Start();
-            var versionOutput = await process1.StandardOutput.ReadToEndAsync();
-            var versionError = await process1.StandardError.ReadToEndAsync();
-            await process1.WaitForExitAsync();
-            diagnosticInfo["python_version"] = versionOutput.Trim();
-
-            if (!string.IsNullOrEmpty(versionError))
-            {
-                diagnosticInfo["version_error"] = versionError.Trim();
-            }
-
-            // Check installed packages
-            var packagesProcess = new ProcessStartInfo
-            {
-                FileName = pythonPath,
-                Arguments = "-c \"import sys; import pkg_resources; print('\\n'.join([f'{pkg.key}=={pkg.version}' for pkg in pkg_resources.working_set]))\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process2 = new Process { StartInfo = packagesProcess };
-            process2.Start();
-            var packagesOutput = await process2.StandardOutput.ReadToEndAsync();
-            var packagesError = await process2.StandardError.ReadToEndAsync();
-            await process2.WaitForExitAsync();
-            diagnosticInfo["installed_packages"] = packagesOutput.Trim();
-
-            if (!string.IsNullOrEmpty(packagesError))
-            {
-                diagnosticInfo["packages_error"] = packagesError.Trim();
-            }
-
-            // Try to import torch and pandas
-            var importProcess = new ProcessStartInfo
-            {
-                FileName = pythonPath,
-                Arguments = "-c \"try: import pandas; print(f'pandas={pandas.__version__}'); except Exception as e: print(f'pandas_error={str(e)}'); try: import torch; print(f'torch={torch.__version__}'); except Exception as e: print(f'torch_error={str(e)}')\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process3 = new Process { StartInfo = importProcess };
-            process3.Start();
-            var importOutput = await process3.StandardOutput.ReadToEndAsync();
-            var importError = await process3.StandardError.ReadToEndAsync();
-            await process3.WaitForExitAsync();
-            diagnosticInfo["import_test"] = importOutput.Trim();
-
-            if (!string.IsNullOrEmpty(importError))
-            {
-                diagnosticInfo["import_error"] = importError.Trim();
-            }
-
-            // Check if the optimizer.py file exists
-            var optimizerPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
-            diagnosticInfo["optimizer_exists"] = System.IO.File.Exists(optimizerPath).ToString();
-
-            if (System.IO.File.Exists(optimizerPath))
-            {
-                diagnosticInfo["optimizer_size"] = new FileInfo(optimizerPath).Length.ToString() + " bytes";
-            }
-
-            return Ok(diagnosticInfo);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error checking Python environment");
-            return StatusCode(500, new { error = "Error checking Python environment", details = ex.ToString() });
-        }
-    }
-
-    /// <summary>
-    /// Check if the optimizer.py file exists and is accessible.
-    /// </summary>
-    /// <returns>Information about the optimizer.py file.</returns>
-    /// <example>
-    /// GET /api/ReviewLog/check-file
-    /// </example>
-    [HttpGet("check-file")]
-    public ActionResult<object> CheckOptimizerFile()
-    {
-        try
-        {
-            var result = new Dictionary<string, object>();
-            var currentDirectory = Directory.GetCurrentDirectory();
-
-            // Check expected location
-            var optimizerPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
-            result["expected_path"] = optimizerPath;
-            result["file_exists"] = System.IO.File.Exists(optimizerPath);
-
-            // If file exists, get its size and creation time
-            if (System.IO.File.Exists(optimizerPath))
-            {
-                var fileInfo = new FileInfo(optimizerPath);
-                result["file_size"] = fileInfo.Length;
-                result["file_created"] = fileInfo.CreationTime;
-                result["file_modified"] = fileInfo.LastWriteTime;
-
-                // Get first few lines of the file
-                var firstLines = System.IO.File.ReadLines(optimizerPath).Take(5).ToList();
-                result["file_preview"] = string.Join(Environment.NewLine, firstLines);
-            }
-
-            // Check fsrs directory
-            var fsrsDir = Path.Combine(currentDirectory, "fsrs");
-            result["fsrs_dir_exists"] = Directory.Exists(fsrsDir);
-
-            if (Directory.Exists(fsrsDir))
-            {
-                // List files in the fsrs directory
-                var files = Directory.GetFiles(fsrsDir);
-                result["fsrs_files"] = files.Select(f => new FileInfo(f).Name).ToList();
-            }
-
-            // Check alternative locations
-            var alternativeLocations = new[]
-            {
-                "/app/fsrs/optimizer.py",
-                "./fsrs/optimizer.py",
-                "../fsrs/optimizer.py"
-            };
-
-            var alternativeResults = new Dictionary<string, bool>();
-            foreach (var location in alternativeLocations)
-            {
-                alternativeResults[location] = System.IO.File.Exists(location);
-            }
-            result["alternative_locations"] = alternativeResults;
-
-            // Get directory structure
-            result["current_directory"] = currentDirectory;
-            result["directory_structure"] = GetDirectoryStructure(currentDirectory, 2);
-
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { error = "Error checking file", details = ex.ToString() });
-        }
-    }
-
-    private object GetDirectoryStructure(string path, int maxDepth, int currentDepth = 0)
-    {
-        if (currentDepth > maxDepth) return "...";
-
-        try
-        {
-            var result = new Dictionary<string, object>();
-
-            if (Directory.Exists(path))
-            {
-                // Get subdirectories
-                foreach (var dir in Directory.GetDirectories(path))
-                {
-                    var dirInfo = new DirectoryInfo(dir);
-                    result[dirInfo.Name + "/"] = GetDirectoryStructure(dir, maxDepth, currentDepth + 1);
-                }
-
-                // Get files
-                foreach (var file in Directory.GetFiles(path))
-                {
-                    var fileInfo = new FileInfo(file);
-                    result[fileInfo.Name] = fileInfo.Length;
-                }
-            }
-
-            return result;
-        }
-        catch (Exception)
-        {
-            return "Error reading directory";
         }
     }
 }

@@ -115,7 +115,7 @@ const Lessons: React.FC = () => {
           }
           disabled={selectedLessons.length === 0}
         >
-          Review all
+          Exam mode
         </button>
       </div>
       <div className={pageStyles.list}>
