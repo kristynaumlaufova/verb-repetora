@@ -51,10 +51,11 @@ RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy Python requirements.txt separately for better caching
-COPY BE/fsrs/requirements.txt ./fsrs/
-COPY BE/fsrs/run_python.sh ./fsrs/
-COPY BE/fsrs/check_environment.sh ./fsrs/
+COPY BE/fsrs/ ./fsrs/
 RUN chmod +x ./fsrs/run_python.sh ./fsrs/check_environment.sh
+
+# List fsrs directory contents for debugging
+RUN ls -la ./fsrs/
 
 # Install Python dependencies in the virtual environment
 RUN pip3 install --no-cache-dir -r ./fsrs/requirements.txt

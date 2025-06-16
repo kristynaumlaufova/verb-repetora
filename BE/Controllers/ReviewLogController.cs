@@ -118,13 +118,29 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             {
                 return Ok(new { message = "No review logs found, using default weights" });
             }            // Serialize the review logs
-            var serializedLogs = JsonSerializer.Serialize(formattedLogs);
-
-            // Prepare the Python process
+            var serializedLogs = JsonSerializer.Serialize(formattedLogs);            // Prepare the Python process
             // Check if we're in a Docker environment with virtual env
             string pythonPath;
-            string optimizerScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "optimizer.py");
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string optimizerScriptPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
             string arguments = optimizerScriptPath;
+
+            // Log the paths for debugging
+            logger.LogInformation("Current directory: {CurrentDir}", currentDirectory);
+            logger.LogInformation("Looking for optimizer script at: {OptimizerPath}", optimizerScriptPath);
+            logger.LogInformation("Optimizer script exists: {Exists}", System.IO.File.Exists(optimizerScriptPath));
+
+            // List the contents of the fsrs directory for debugging
+            string fsrsDir = Path.Combine(currentDirectory, "fsrs");
+            if (Directory.Exists(fsrsDir))
+            {
+                var files = Directory.GetFiles(fsrsDir);
+                logger.LogInformation("Files in fsrs directory: {Files}", string.Join(", ", files));
+            }
+            else
+            {
+                logger.LogWarning("fsrs directory does not exist at {FsrsDir}", fsrsDir);
+            }
 
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
@@ -133,23 +149,26 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             else
             {
                 // Check for the wrapper script first
-                var wrapperScriptPath = Path.Combine(Directory.GetCurrentDirectory(), "fsrs", "run_python.sh");
+                var wrapperScriptPath = Path.Combine(currentDirectory, "fsrs", "run_python.sh");
                 if (System.IO.File.Exists(wrapperScriptPath))
                 {
                     pythonPath = wrapperScriptPath;
+                    // Use absolute path to the optimizer script
                     arguments = optimizerScriptPath;
+
+                    logger.LogInformation("Using wrapper script: {WrapperPath}", wrapperScriptPath);
                 }
                 else if (System.IO.File.Exists("/opt/venv/bin/python"))
                 {
                     pythonPath = "/opt/venv/bin/python";
+                    logger.LogInformation("Using virtual environment Python");
                 }
                 else
                 {
                     pythonPath = "python3";
+                    logger.LogInformation("Using system Python");
                 }
-            }
-
-            // Start Python process
+            }            // Start Python process
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = pythonPath,
@@ -158,7 +177,9 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                // Set the working directory to ensure relative paths work
+                WorkingDirectory = currentDirectory
             };
 
             using var process = new Process { StartInfo = processStartInfo };
@@ -334,6 +355,110 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
         {
             logger.LogError(ex, "Error checking Python environment");
             return StatusCode(500, new { error = "Error checking Python environment", details = ex.ToString() });
+        }
+    }
+
+    /// <summary>
+    /// Check if the optimizer.py file exists and is accessible.
+    /// </summary>
+    /// <returns>Information about the optimizer.py file.</returns>
+    /// <example>
+    /// GET /api/ReviewLog/check-file
+    /// </example>
+    [HttpGet("check-file")]
+    public ActionResult<object> CheckOptimizerFile()
+    {
+        try
+        {
+            var result = new Dictionary<string, object>();
+            var currentDirectory = Directory.GetCurrentDirectory();
+
+            // Check expected location
+            var optimizerPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
+            result["expected_path"] = optimizerPath;
+            result["file_exists"] = System.IO.File.Exists(optimizerPath);
+
+            // If file exists, get its size and creation time
+            if (System.IO.File.Exists(optimizerPath))
+            {
+                var fileInfo = new FileInfo(optimizerPath);
+                result["file_size"] = fileInfo.Length;
+                result["file_created"] = fileInfo.CreationTime;
+                result["file_modified"] = fileInfo.LastWriteTime;
+
+                // Get first few lines of the file
+                var firstLines = System.IO.File.ReadLines(optimizerPath).Take(5).ToList();
+                result["file_preview"] = string.Join(Environment.NewLine, firstLines);
+            }
+
+            // Check fsrs directory
+            var fsrsDir = Path.Combine(currentDirectory, "fsrs");
+            result["fsrs_dir_exists"] = Directory.Exists(fsrsDir);
+
+            if (Directory.Exists(fsrsDir))
+            {
+                // List files in the fsrs directory
+                var files = Directory.GetFiles(fsrsDir);
+                result["fsrs_files"] = files.Select(f => new FileInfo(f).Name).ToList();
+            }
+
+            // Check alternative locations
+            var alternativeLocations = new[]
+            {
+                "/app/fsrs/optimizer.py",
+                "./fsrs/optimizer.py",
+                "../fsrs/optimizer.py"
+            };
+
+            var alternativeResults = new Dictionary<string, bool>();
+            foreach (var location in alternativeLocations)
+            {
+                alternativeResults[location] = System.IO.File.Exists(location);
+            }
+            result["alternative_locations"] = alternativeResults;
+
+            // Get directory structure
+            result["current_directory"] = currentDirectory;
+            result["directory_structure"] = GetDirectoryStructure(currentDirectory, 2);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Error checking file", details = ex.ToString() });
+        }
+    }
+
+    private object GetDirectoryStructure(string path, int maxDepth, int currentDepth = 0)
+    {
+        if (currentDepth > maxDepth) return "...";
+
+        try
+        {
+            var result = new Dictionary<string, object>();
+
+            if (Directory.Exists(path))
+            {
+                // Get subdirectories
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    var dirInfo = new DirectoryInfo(dir);
+                    result[dirInfo.Name + "/"] = GetDirectoryStructure(dir, maxDepth, currentDepth + 1);
+                }
+
+                // Get files
+                foreach (var file in Directory.GetFiles(path))
+                {
+                    var fileInfo = new FileInfo(file);
+                    result[fileInfo.Name] = fileInfo.Length;
+                }
+            }
+
+            return result;
+        }
+        catch (Exception)
+        {
+            return "Error reading directory";
         }
     }
 }

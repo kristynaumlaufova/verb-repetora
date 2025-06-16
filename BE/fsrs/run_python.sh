@@ -6,6 +6,40 @@ echo "Running Python wrapper script" >&2
 echo "Command arguments: $@" >&2
 echo "Current directory: $(pwd)" >&2
 
+# Check if the file exists
+if [ ! -f "$1" ]; then
+    echo "Error: File not found: $1" >&2
+    echo "Searching for the file in common locations:" >&2
+    
+    # Try to find the file in alternative locations
+    SCRIPT_NAME=$(basename "$1")
+    POSSIBLE_LOCATIONS=(
+        "./fsrs/$SCRIPT_NAME"
+        "/app/fsrs/$SCRIPT_NAME"
+        "$(dirname "$0")/$SCRIPT_NAME"
+    )
+    
+    for location in "${POSSIBLE_LOCATIONS[@]}"; do
+        if [ -f "$location" ]; then
+            echo "Found file at alternative location: $location" >&2
+            SCRIPT_PATH="$location"
+            break
+        fi
+    done
+    
+    if [ -z "$SCRIPT_PATH" ]; then
+        echo "Could not find $SCRIPT_NAME in any common location" >&2
+        echo "Directories in /app:" >&2
+        ls -la /app >&2
+        echo "Directories in /app/fsrs (if exists):" >&2
+        ls -la /app/fsrs 2>/dev/null || echo "/app/fsrs does not exist" >&2
+        exit 1
+    else
+        echo "Using alternative location: $SCRIPT_PATH" >&2
+        set -- "$SCRIPT_PATH" "${@:2}"
+    fi
+fi
+
 # Function to check if a package is installed
 check_package() {
     python_cmd=$1
