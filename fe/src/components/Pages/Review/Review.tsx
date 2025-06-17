@@ -47,7 +47,7 @@ const Review: React.FC = () => {
         const data = await loadReviewData(state.lessonIds || []);
 
         if (data) {
-          initReviewSession(data);
+          await initReviewSession(data);
         }
       } catch (error) {
         console.error("Failed to initialize review session:", error);

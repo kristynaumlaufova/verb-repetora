@@ -1,5 +1,5 @@
 import { apiClient } from "./apiService";
-import { LearningState } from "../helpers/fsrsHelper"
+import { LearningState } from "../hooks/useFSRSManager"
 
 /**
  * Interface representing a word.

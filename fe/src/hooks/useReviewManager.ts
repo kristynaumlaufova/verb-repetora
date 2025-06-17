@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect} from 'react';
 import { Word, wordService } from '../services/wordService';
 import { WordType } from '../services/wordTypeService';
 import { reviewService } from '../services/reviewService';
 import { reviewLogService } from '../services/reviewLogService';
-import { convertRating, reviewWord, ReviewLog, updateFSRSWeights } from '../helpers/fsrsHelper';
+import { useFSRSManager, ReviewLog } from './useFSRSManager';
 import { useLanguage } from '../contexts/LanguageContext';
 import { MinHeap } from '@datastructures-js/heap';
 
@@ -46,8 +46,28 @@ export const useReviewManager = (type: string) => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [reviewLogs, setReviewLogs] = useState<ReviewLog[]>([]);
+  const [weights, setWeights] = useState<number[]>([]);
+
   const reviewStartTimeRef = useRef<number | null>(null);
   const { currentLanguage } = useLanguage();
+
+  // Load optimized FSRS weights
+  useEffect(() => {
+    const loadWeights = async () => {
+      if (type === "recommended") {
+        try {
+          const optimizedWeights = await reviewLogService.loadOptimizedWeights();
+          setWeights(optimizedWeights);
+        } catch (error) {
+          console.error("Failed to load optimized weights:", error);
+        }
+      }
+    };
+
+    loadWeights();
+  }, [type]);
+  
+  const { convertRating, reviewWord} = useFSRSManager(weights);
 
   /**
    * Comparison function for sorting words based on their due date
@@ -136,8 +156,9 @@ export const useReviewManager = (type: string) => {
    * @param data - Optional review data to use (defaults to stored reviewData)
    * @returns The newly created review session
    * @throws Error if review data is not available
-   */
-  const initReviewSession = useCallback((data?: ReviewData): ReviewSession => {
+   */  
+  
+  const initReviewSession = useCallback(async (data?: ReviewData): Promise<ReviewSession> => {
     const sessionData = data || reviewData;
     
     if (!sessionData) {
@@ -160,7 +181,7 @@ export const useReviewManager = (type: string) => {
       totalWords: sessionData.words.length
     };
     
-    setReviewSession(newSession);
+    setReviewSession(newSession);    
     setIsChecking(false);
     setIsCorrect(null);
     setIsComplete(false);
@@ -269,7 +290,7 @@ export const useReviewManager = (type: string) => {
         }
       };
     });
-  }, [reviewSession, getCurrentWord]);
+  }, [reviewSession, getCurrentWord, convertRating, reviewWord]);
 
   /**
    * Completes the current review session
@@ -284,18 +305,7 @@ export const useReviewManager = (type: string) => {
       
       // Save review logs for optimization
       if (reviewLogs.length > 0) {
-        reviewLogService.createBatchReviewLogs(reviewLogs)
-          .then(() => {
-            // After saving logs, load optimized weights
-            return reviewLogService.loadWeights();
-          })
-          .then(weights => {
-            if (weights && weights.length > 0) {
-              // Update FSRS weights with the optimized values
-              updateFSRSWeights(weights);
-            }
-          })
-          .catch(err => console.error("Failed to process review logs:", err));
+        reviewLogService.createBatchReviewLogs(reviewLogs);
       }
     }
     

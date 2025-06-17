@@ -18,6 +18,6 @@ public class StateDistributionDto
 
 public class DailyNewWordsDto
 {
-    public string Date { get; set; }
+    public string? Date { get; set; }
     public int Count { get; set; }
 }

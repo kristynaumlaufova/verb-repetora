@@ -4,6 +4,8 @@ using Microsoft.OpenApi.Models;
 
 using BE.Data;
 using BE.Models;
+using BE.Services;
+using BE.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +114,10 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
     });
 });
+
+// Register background service to update FSRS weights
+builder.Services.AddScoped<ReviewLogController>();
+builder.Services.AddHostedService<FsrsWeightsUpdateService>();
 
 var app = builder.Build();
 

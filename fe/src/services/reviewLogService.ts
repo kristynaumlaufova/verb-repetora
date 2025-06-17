@@ -1,5 +1,5 @@
 import { apiClient } from "./apiService";
-import { ReviewLog } from "../helpers/fsrsHelper";
+import { ReviewLog } from "../hooks/useFSRSManager";
 
 export interface ReviewLogBatch {
   reviewLogs: ReviewLog[];
@@ -26,14 +26,8 @@ export const reviewLogService = {
    * Loads optimized FSRS weights from the server
    * @returns Promise that resolves with the optimized weights
    */
-  loadWeights: async (): Promise<number[]> => {
-    try {
-      const response = await apiClient.get("/ReviewLog/weights");
-      return response.data.weights;
-    } catch (error) {
-      console.error("Failed to load optimized weights:", error);
-      // Return empty array if weights couldn't be loaded
-      return [];
-    }
+  loadOptimizedWeights: async (): Promise<number[]> => {
+    const response = await apiClient.get("/ReviewLog/load");
+    return response.data;
   }
 };

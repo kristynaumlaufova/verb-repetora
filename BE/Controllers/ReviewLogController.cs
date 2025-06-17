@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -80,119 +81,158 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
         }
     }
 
-    /// <summary>
-    /// Loads all stored review logs and runs the optimizer.py script to optimize FSRS weights.
+    /// <summary>    
+    /// Updates the FSRS weights for all users. This method is called by a scheduled job
+    /// that runs daily at 2:00 AM.
     /// </summary>
-    /// <returns>The optimized FSRS weights.</returns>
     /// <example>
     /// GET /api/ReviewLog/weights
     /// </example>
-    [HttpGet("weights")]
-    public async Task<ActionResult<object>> LoadWeights()
+    [HttpGet("update")]
+    [AllowAnonymous]
+    public async Task<ActionResult> UpdateWeights()
     {
-        var user = await userManager.GetUserAsync(User);
-        if (user == null)
-        {
-            return Unauthorized("User not authenticated");
-        }
-
         try
         {
-            // Get all review logs for words that belong to the current user
-            var formattedLogs = await context.ReviewLogs
-                .Include(rl => rl.Word)
-                .ThenInclude(w => w.Language)
-                .Where(rl => rl.Word.Language.UserId == user.Id)
-                .OrderBy(rl => rl.ReviewDateTime)
-                .Take(10000) //Takes most recent 10000 thousand records
-                .Select(rl => new
+            // Get all users
+            var users = await userManager.Users.ToListAsync();
+
+            foreach (var user in users)
+            {
+                // Get all review logs for words that belong to the current user
+                var formattedLogs = await context.ReviewLogs
+                    .Include(rl => rl.Word)
+                    .ThenInclude(w => w.Language)
+                    .Where(rl => rl.Word.Language.UserId == user.Id)
+                    .OrderBy(rl => rl.ReviewDateTime)
+                    .Take(10000) // Takes most recent 10000 records
+                    .Select(rl => new
+                    {
+                        card_id = rl.WordId,
+                        rating = (int)rl.Rating,
+                        review_datetime = rl.ReviewDateTime.ToString("o"), // ISO 8601 format
+                        review_duration = rl.ReviewDuration
+                    })
+                    .ToListAsync();
+
+                if (formattedLogs.Count == 0)
                 {
-                    card_id = rl.WordId,
-                    rating = (int)rl.Rating,
-                    review_datetime = rl.ReviewDateTime.ToString("o"), // ISO 8601 format
-                    review_duration = rl.ReviewDuration
-                })
-                .ToListAsync();
-
-            if (formattedLogs.Count == 0)
-            {
-                return Ok(new { message = "No review logs found, using default weights" });
-            }
-
-            // Serialize the review logs
-            var serializedLogs = JsonSerializer.Serialize(formattedLogs);
-
-            // Prepare the Python process
-            string pythonPath;
-            string currentDirectory = Directory.GetCurrentDirectory();
-            string optimizerScriptPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
-            string arguments = optimizerScriptPath;
-
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                pythonPath = "python";
-            }
-            else
-            {
-                pythonPath = "/opt/venv/bin/python";
-
-            }
-
-            // Start Python process
-            var processStartInfo = new ProcessStartInfo
-            {
-                FileName = pythonPath,
-                Arguments = arguments,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = currentDirectory
-            };
-
-            using var process = new Process { StartInfo = processStartInfo };
-            process.Start();
-
-            await process.StandardInput.WriteAsync(serializedLogs);
-            process.StandardInput.Close();
-
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-
-            await process.WaitForExitAsync();
-
-            if (process.ExitCode != 0)
-            {
-                logger.LogError("Python script error: {Error}", error);
-                return StatusCode(500, new { message = "Error optimizing weights", details = error });
-            }
-
-            // Parse the output to get optimized weights
-            try
-            {
-                if (string.IsNullOrWhiteSpace(output))
-                {
-                    return StatusCode(500, new { message = "Empty output from Python script", details = "The Python script didn't produce any output." });
+                    continue;
                 }
 
-                var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
+                // Serialize the review logs
+                var serializedLogs = JsonSerializer.Serialize(formattedLogs);
 
-                if (optimizedWeights == null || optimizedWeights.Count == 0)
+                // Prepare the Python process
+                string pythonPath;
+                string currentDirectory = Directory.GetCurrentDirectory();
+                string optimizerScriptPath = Path.Combine(currentDirectory, "fsrs", "optimizer.py");
+                string arguments = optimizerScriptPath;
+
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    return StatusCode(500, new { message = "No weights returned from Python script", details = output });
+                    pythonPath = "python";
+                }
+                else
+                {
+                    pythonPath = "/opt/venv/bin/python";
                 }
 
-                return Ok(new { weights = optimizedWeights });
+                // Start Python process
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = pythonPath,
+                    Arguments = arguments,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = currentDirectory
+                };
+
+                using var process = new Process { StartInfo = processStartInfo };
+                process.Start();
+
+                await process.StandardInput.WriteAsync(serializedLogs);
+                process.StandardInput.Close();
+
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode != 0)
+                {
+                    continue;
+                }
+
+                // Parse the output to get optimized weights
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(output))
+                    {
+                        continue;
+                    }
+
+                    var optimizedWeights = JsonSerializer.Deserialize<List<double>>(output);
+
+                    if (optimizedWeights == null || optimizedWeights.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    // Store the optimized weights in the user's Weights property
+                    user.Weights = JsonSerializer.Serialize(optimizedWeights);
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await userManager.UpdateAsync(user);
+                }
+                catch (JsonException)
+                {
+                    // Skip the user if output can't be parsed
+                    continue;
+                }
             }
-            catch (JsonException ex)
-            {
-                return StatusCode(500, new { message = "Error parsing optimizer output", details = output, error = ex.Message });
-            }
+
+            return Ok();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return StatusCode(500, new { message = "An error occurred while optimizing weights", details = ex.Message });
+            return StatusCode(500);
+        }
+    }
+
+    /// <summary>
+    /// Gets the current user's FSRS weights.
+    /// </summary>
+    /// <returns>The user's optimized FSRS weights as a list of doubles.</returns>
+    /// <example>
+    /// GET /api/ReviewLog/weights/user
+    /// </example>
+    [HttpGet("load")]
+    public async Task<ActionResult<List<double>>> GetUserWeights()
+    {
+        try
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized("User not authenticated");
+            }
+
+            // Deserialize the weights from the user's Weights property
+            var weights = JsonSerializer.Deserialize<List<double>>(user.Weights);
+
+            if (weights == null || weights.Count == 0)
+            {
+                return NotFound("No weights found for user");
+            }
+
+            return Ok(weights);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while retrieving user weights");
         }
     }
 }
