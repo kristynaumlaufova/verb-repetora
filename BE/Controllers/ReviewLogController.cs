@@ -90,7 +90,7 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
     /// </example>
     [HttpGet("update")]
     [AllowAnonymous]
-    public async Task<ActionResult> UpdateWeights()
+    public async Task<ActionResult> UpdateParameters()
     {
         try
         {
@@ -105,7 +105,7 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
                     .ThenInclude(w => w.Language)
                     .Where(rl => rl.Word.Language.UserId == user.Id)
                     .OrderBy(rl => rl.ReviewDateTime)
-                    .Take(10000) // Takes most recent 10000 records
+                    .Take(100000) // Takes most recent 100000 records
                     .Select(rl => new
                     {
                         card_id = rl.WordId,
@@ -183,7 +183,7 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
                     }
 
                     // Store the optimized weights in the user's Weights property
-                    user.Weights = JsonSerializer.Serialize(optimizedWeights);
+                    user.FSRSParameters = JsonSerializer.Serialize(optimizedWeights);
                     user.UpdatedAt = DateTime.UtcNow;
                     await userManager.UpdateAsync(user);
                 }
@@ -210,7 +210,7 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
     /// GET /api/ReviewLog/weights/user
     /// </example>
     [HttpGet("load")]
-    public async Task<ActionResult<List<double>>> GetUserWeights()
+    public async Task<ActionResult<List<double>>> GetUserParameters()
     {
         try
         {
@@ -221,14 +221,14 @@ public class ReviewLogController(ApplicationDbContext context, UserManager<AppUs
             }
 
             // Deserialize the weights from the user's Weights property
-            var weights = JsonSerializer.Deserialize<List<double>>(user.Weights);
+            var parameters = JsonSerializer.Deserialize<List<double>>(user.FSRSParameters);
 
-            if (weights == null || weights.Count == 0)
+            if (parameters == null || parameters.Count == 0)
             {
                 return NotFound("No weights found for user");
             }
 
-            return Ok(weights);
+            return Ok(parameters);
         }
         catch (Exception)
         {

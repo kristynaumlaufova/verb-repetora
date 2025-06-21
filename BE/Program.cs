@@ -117,7 +117,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Register background service to update FSRS weights
 builder.Services.AddScoped<ReviewLogController>();
-builder.Services.AddHostedService<FsrsWeightsUpdateService>();
+builder.Services.AddHostedService<FsrsParametersUpdateService>();
 
 var app = builder.Build();
 

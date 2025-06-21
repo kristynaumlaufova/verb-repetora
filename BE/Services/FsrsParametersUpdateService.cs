@@ -2,14 +2,12 @@ using BE.Controllers;
 
 namespace BE.Services;
 
-public class FsrsWeightsUpdateService(
+public class FsrsParametersUpdateService(
     IServiceProvider serviceProvider,
-    ILogger<FsrsWeightsUpdateService> logger) : BackgroundService
+    ILogger<FsrsParametersUpdateService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("FSRS Weights Update Service is starting.");
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.Now;
@@ -31,7 +29,7 @@ public class FsrsWeightsUpdateService(
                 using var scope = serviceProvider.CreateScope();
                 var reviewLogController = scope.ServiceProvider.GetRequiredService<ReviewLogController>();
 
-                await reviewLogController.UpdateWeights();
+                await reviewLogController.UpdateParameters();
 
                 logger.LogInformation("FSRS weights update process completed at {Time}", DateTimeOffset.Now);
             }

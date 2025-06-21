@@ -1558,15 +1558,11 @@ try:
         ) -> list[float]:
             def _validate_review_logs() -> None:
                 if len(self.review_logs) < 512:
-                    raise ValueError(
-                        "Not enough ReviewLog's: at least 512 ReviewLog objects are required to compute optimal retention"
-                    )
+                    return 0.9 #Change in original implementation - to return default retention value instead of exception
 
                 for review_log in self.review_logs:
                     if review_log.review_duration is None:
-                        raise ValueError(
-                            "ReviewLog.review_duration cannot be None when computing optimal retention"
-                        )
+                        return 0.9 #Change in original implementation - to return default retention value instead of exception
 
             _validate_review_logs()
 
@@ -1622,6 +1618,10 @@ if __name__ == "__main__":
     # Optimize parameters
     optimizer = Optimizer(review_logs)
     optimized_parameters = optimizer.compute_optimal_parameters()
+
+    # Change in original implementation - added optimized_retention to optimized parameters array
+    optimized_retention = optimizer.compute_optimal_retention(optimized_parameters);
+    optimized_parameters.append(optimized_retention)
 
     # Return optimized parameters as JSON
     print(json.dumps(optimized_parameters))

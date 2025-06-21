@@ -26,7 +26,7 @@ export const reviewLogService = {
    * Loads optimized FSRS weights from the server
    * @returns Promise that resolves with the optimized weights
    */
-  loadOptimizedWeights: async (): Promise<number[]> => {
+  loadOptimizedParameters: async (): Promise<number[]> => {
     const response = await apiClient.get("/ReviewLog/load");
     return response.data;
   }

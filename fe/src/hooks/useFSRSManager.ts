@@ -22,14 +22,14 @@ export interface ReviewLog {
 }
 
 /**
- * Hook for managing spaced repetition review sessions
- * Provides functionality for loading words, checking answers, and managing the review process
+ * Hook for managing FSRS algorithm calculation
  * 
- * @param type - The type of review session ("all" or "recommended")
- * @returns An object containing review session state and functions to manage the review process
+ * @param parameteres - provide optimized FSRS parameters
  */
-export const useFSRSManager = (weights: number[]) => {  
-  console.log(weights);
+export const useFSRSManager = (parameters: number[]) => {  
+  let weights = parameters.slice(0, -1)
+  let desired_retention = parameters[21]
+
   // Constants for counting minimal and maximal interval after applying fuzz
   const FUZZ_RANGES = [
       {
@@ -48,9 +48,6 @@ export const useFSRSManager = (weights: number[]) => {
           "factor": 0.05,
       },
   ]
-
-  // Desired retention rate of word scheduled with the scheduler
-  const DESIRED_RETENTION = 0.9;
 
   // Small time intervals that schedule words in the Learning state
   const LEARNING_STEPS = [10];
@@ -173,7 +170,7 @@ export const useFSRSManager = (weights: number[]) => {
    * @returns The next interval value in days.
    */
   const nextInterval = (stability: number): number => {
-      let nextInterval = (stability / FACTOR) * (Math.pow(DESIRED_RETENTION, 1 / DECAY) - 1);
+      let nextInterval = (stability / FACTOR) * (Math.pow(desired_retention, 1 / DECAY) - 1);
       
       // Convert to whole days
       nextInterval = Math.round(nextInterval);

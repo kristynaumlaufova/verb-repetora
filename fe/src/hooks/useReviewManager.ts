@@ -46,28 +46,28 @@ export const useReviewManager = (type: string) => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [reviewLogs, setReviewLogs] = useState<ReviewLog[]>([]);
-  const [weights, setWeights] = useState<number[]>([]);
+  const [parameters, setParameters] = useState<number[]>([]);
 
   const reviewStartTimeRef = useRef<number | null>(null);
   const { currentLanguage } = useLanguage();
 
-  // Load optimized FSRS weights
+  // Load optimized FSRS parameters
   useEffect(() => {
-    const loadWeights = async () => {
+    const loadParameters = async () => {
       if (type === "recommended") {
         try {
-          const optimizedWeights = await reviewLogService.loadOptimizedWeights();
-          setWeights(optimizedWeights);
+          const optimizedParameters = await reviewLogService.loadOptimizedParameters();
+          setParameters(optimizedParameters);
         } catch (error) {
-          console.error("Failed to load optimized weights:", error);
+          console.error("Failed to load optimized parameters:", error);
         }
       }
     };
 
-    loadWeights();
+    loadParameters();
   }, [type]);
   
-  const { convertRating, reviewWord} = useFSRSManager(weights);
+  const { convertRating, reviewWord} = useFSRSManager(parameters);
 
   /**
    * Comparison function for sorting words based on their due date
