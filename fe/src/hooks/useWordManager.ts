@@ -120,7 +120,7 @@ export const useWordManager = (langId: number | undefined) => {
       return true;
     } catch (error: any) {
       setError(
-        error.response?.data || "An error occurred while creating the word"
+        error.message || "An error occurred while creating the word"
       );
       return false;
     }
