@@ -476,18 +476,18 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
         };
 
         // Calculate daily new words based on FirstReview date
-        var dailyNewWords = words
-            .Where(w => w.FirstReview != null)
-            .GroupBy(w => w.FirstReview!.Value.Date)
-            .Select(g => new DailyNewWordsDto
+        var dailyNewWords = Enumerable
+            .Range(0, 14)
+            .Select(i => DateTime.Today.AddDays(-13 + i))
+            .Select(date => new DailyNewWordsDto
             {
-                Date = g.Key.ToString("yyyy-MM-dd"),
-                Count = g.Count()
+                Date = date.ToString("yyyy-MM-dd"),
+                Count = words
+                    .Where(w => w.FirstReview != null && w.FirstReview.Value.Date == date)
+                    .Count()
             })
-            .OrderByDescending(d => d.Date)
-            .Take(14) // Last 14 days
-            .OrderBy(d => d.Date)
             .ToList();
+
 
         var result = new DashboardStatsDto
         {
