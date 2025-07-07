@@ -268,7 +268,8 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
     /// </summary>
     /// <param name="id">The ID of the word to delete.</param>
     /// <example>
-    /// DELETE /api/Word/5    /// </example>
+    /// DELETE /api/Word/5    
+    /// </example>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteWord(int id)
     {
@@ -483,7 +484,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
             {
                 Date = date.ToString("yyyy-MM-dd"),
                 Count = words
-                    .Where(w => w.FirstReview != null && w.FirstReview.Value.Date == date)
+                    .Where(w => w.FirstReview != null && w.FirstReview.Value.Date == date.Date)
                     .Count()
             })
             .ToList();
