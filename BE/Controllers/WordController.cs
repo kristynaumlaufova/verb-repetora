@@ -167,8 +167,20 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
             Fields = request.Fields
         };
 
-        context.Words.Add(word);
-        await context.SaveChangesAsync();
+        try 
+        {
+            context.Words.Add(word);
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException?.Message.Contains("UNIQUE") == true 
+                || ex.InnerException?.Message.Contains("duplicate") == true)
+            {
+                return BadRequest("The word already exists. Duplicate words are not allowed.");
+            }
+            throw;
+        }
 
         var dto = new WordDto(
             word.Id,
