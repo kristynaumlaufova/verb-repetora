@@ -418,11 +418,7 @@ public class WordController(ApplicationDbContext context, UserManager<AppUser> u
                 word.Difficulty = data.Difficulty;
                 word.Due = data.Due;
                 word.LastReview = data.LastReview;
-
-                if (data.FirstReview.HasValue && !word.FirstReview.HasValue)
-                {
-                    word.FirstReview = data.FirstReview;
-                }
+                word.FirstReview = data.FirstReview;
             }
         }
 
