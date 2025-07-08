@@ -371,9 +371,9 @@ export const useFSRSManager = (parameters: number[]) => {
     const reviewDatetime = new Date();
 
     // Set date of fist review
-    if(updateWord.firstReview === null)
+    if(updatedWord.firstReview === null)
     {
-      updateWord.firstReview = new Date();
+      updatedWord.firstReview = new Date();
     }
     
     // Calculate days since last review
